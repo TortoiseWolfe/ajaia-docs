@@ -6,7 +6,7 @@ useful if nobody silently loses work and nobody sees what they shouldn't, so tho
 It is deployed and working end to end; real-time co-editing and real sign-in are the main things deliberately left out.
 
 - Live app: [Ajaia Docs, sign in as Alice, Bob or Carol](https://ajaia-docs-eight-green.vercel.app)
-- Code: [the source with full git history](CODE_LINK_PENDING)
+- Code: [the source with full git history](https://github.com/TortoiseWolfe/ajaia-docs)
 - Walkthrough video: [3 to 5 minute walkthrough](VIDEO_LINK_PENDING)
 
 <details>
@@ -162,9 +162,8 @@ pastes about 90 KB, leaves within a second, and checks the server.
 <details>
 <summary>Honesty lines</summary>
 
-HONESTY_LINES_PENDING (Jonathan to confirm). Draft: I directed and verified the work myself, and no other person
-helped. The code was written with Claude Code as described above. I started from an empty folder and the standard
-create-next-app scaffold.
+I directed and verified the work myself, and no other person helped. The code was written with Claude Code as
+described above. I started from an empty folder and the standard create-next-app scaffold.
 
 </details>
 
