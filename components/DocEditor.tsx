@@ -84,11 +84,14 @@ export function DocEditor({ doc, role, initialShares, shareCandidates }: Props) 
       again.current = false;
       setStatus("saving");
       try {
+        const payload = JSON.stringify({ content: editor.getJSON(), version: versionRef.current });
         const res = await fetch(`/api/documents/${doc.id}`, {
           method: "PATCH",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ content: editor.getJSON(), version: versionRef.current }),
-          keepalive: opts.keepalive,
+          body: payload,
+          // Browsers refuse keepalive bodies over 64 KiB; a normal fetch still
+          // completes after in-app navigation, which is when this flush runs.
+          keepalive: opts.keepalive && payload.length < 60_000,
         });
         if (res.status === 409) {
           stopped.current = true;
@@ -104,7 +107,8 @@ export function DocEditor({ doc, role, initialShares, shareCandidates }: Props) 
         }
         versionRef.current = body.version;
         setErrorDetail(null);
-        setStatus(again.current ? "dirty" : "saved");
+        // Still dirty if more typing arrived while this save was in flight.
+        setStatus(again.current || timer.current ? "dirty" : "saved");
       } catch {
         setErrorDetail("Check your connection.");
         setStatus("error");

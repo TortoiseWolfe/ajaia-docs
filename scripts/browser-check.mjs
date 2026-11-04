@@ -93,6 +93,22 @@ try {
   const mdText = await (await download.createReadStream()).toArray().then((c) => Buffer.concat(c).toString("utf8"));
   check("export .md downloads with headings and list", download.suggestedFilename() === "Browser check.md" && mdText.includes("# Big heading") && /^-\s+item one$/m.test(mdText));
 
+  // Large doc (over the 64 KiB keepalive limit): leave within 1 s of typing, the edit must still land
+  const bigDoc = await a.request.post(`${BASE}/api/documents`, { data: { title: "Big doc check" } }).then((r) => r.json());
+  await a.goto(`${BASE}/docs/${bigDoc.id}`);
+  await a.locator(".ProseMirror").click();
+  const chunk = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. ".repeat(1600); // ~90 KB
+  await a.keyboard.insertText(chunk);
+  await a.keyboard.type(" LAST-WORDS");
+  await a.getByRole("link", { name: /All documents/ }).click();
+  await a.waitForURL(`${BASE}/`);
+  await a.waitForTimeout(2500);
+  const bigBody = await a.request.get(`${BASE}/api/documents/${bigDoc.id}`).then((r) => r.json());
+  check("large doc: last words saved after leaving quickly", JSON.stringify(bigBody.content).includes("LAST-WORDS"));
+  await a.request.delete(`${BASE}/api/documents/${bigDoc.id}`);
+  await a.goto(docUrl);
+  await a.locator(".ProseMirror h1").waitFor();
+
   // Share with Bob as Viewer
   await a.getByRole("button", { name: "Share" }).click();
   await a.getByLabel("Person").selectOption({ label: "Bob Martinez" });

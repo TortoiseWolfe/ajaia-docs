@@ -20,14 +20,19 @@ export function UploadButton() {
     setBusy(true);
     const form = new FormData();
     form.append("file", file);
-    const res = await fetch("/api/import", { method: "POST", body: form });
-    const body = await res.json().catch(() => ({}));
-    if (!res.ok) {
+    try {
+      const res = await fetch("/api/import", { method: "POST", body: form });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setBusy(false);
+        setError(body.error ?? "Upload failed. Try again.");
+        return;
+      }
+      router.push(`/docs/${body.id}`);
+    } catch {
       setBusy(false);
-      setError(body.error ?? "Upload failed. Try again.");
-      return;
+      setError("Couldn't reach the server. Check your connection and try again.");
     }
-    router.push(`/docs/${body.id}`);
   }
 
   return (

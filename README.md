@@ -29,6 +29,7 @@ Sample files to upload are in `samples/` (`sample.md`, `sample.docx`, `sample.tx
   revokes. Home has "My documents" and "Shared with me" with owner names and role badges.
 - **Access on the server:** every API route and page asks one function (`lib/access.ts`) for the caller's role.
   Someone without access gets 404, the same as a missing document.
+- **Export:** download any document you can read as Markdown (`.md`).
 - **Conflict safety:** each save sends the version it started from. If someone else saved first, the server refuses
   with 409 and the editor says "This document was changed by someone else. Reload to see the latest."
 
@@ -62,10 +63,12 @@ With a linked Vercel project, `vercel env pull .env.local` fills the env file in
 
 | Command | Does |
 | --- | --- |
-| `npm test` | Vitest: access rules, stale-save rejection and import, on an in-memory Postgres (PGlite) running the real `db/schema.sql`. No Docker, no network. |
+| `npm test` | Vitest (18 tests): access rules, stale-save rejection, import, zip-bomb guards, export, on an in-memory Postgres (PGlite) running the real `db/schema.sql`. No Docker, no network. |
 | `npm run build` | Production build (TypeScript checked). |
 | `npm run lint` | ESLint. |
 | `npm run db:seed` | Schema + seed against `DATABASE_URL`. |
+| `npm run check:api -- <url>` | Calls every API route as Alice, Bob and Carol and prints status codes (401, 403, 404, 409, uploads). |
+| `npm run check:browser -- <url>` | Playwright drives the real editor: create, format, autosave, reload, export, share, viewer, 404, two-tab conflict. Saves `docs/screenshots/`. |
 
 ## Docs
 

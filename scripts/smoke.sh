@@ -5,7 +5,7 @@ B=${1:-http://localhost:3100}
 D=$(mktemp -d)
 J='content-type: application/json'
 UP=
-SAMPLES=/home/TurtleWolfe/ajaia-assessment/samples
+SAMPLES="$(cd "$(dirname "$0")/../samples" && pwd)"
 FORGED="ajaia_session=carol.$(printf 'A%.0s' {1..43})"
 
 echo "home no cookie: $(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' "$B/")"

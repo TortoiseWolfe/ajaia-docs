@@ -16,18 +16,19 @@ export function NewDocButton() {
         onClick={async () => {
           setBusy(true);
           setError(null);
-          const res = await fetch("/api/documents", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: "{}",
-          });
-          if (!res.ok) {
+          try {
+            const res = await fetch("/api/documents", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: "{}",
+            });
+            if (!res.ok) throw new Error(String(res.status));
+            const { id } = await res.json();
+            router.push(`/docs/${id}`);
+          } catch {
             setBusy(false);
             setError("Couldn't create a document. Try again.");
-            return;
           }
-          const { id } = await res.json();
-          router.push(`/docs/${id}`);
         }}
       >
         {busy ? "Creating…" : "New document"}
