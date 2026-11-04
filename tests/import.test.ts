@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { importFile, kindFromName, titleFromName } from "../lib/import";
+import { readFileSync } from "node:fs";
+import { checkDocxSize, importFile, kindFromName, titleFromName } from "../lib/import";
 import { buildSampleDocx } from "./helpers/docx-builder";
 import { findNodes, headingLevels, markTypes } from "./helpers/tiptap";
 
@@ -59,5 +60,21 @@ describe("file name helpers", () => {
   it("titleFromName", () => {
     expect(titleFromName("my_great-file.docx")).toBe("my great file");
     expect(titleFromName(".md")).toBe("Imported document");
+  });
+});
+
+describe("docx zip-bomb guard", () => {
+  it("refuses a small .docx that declares a huge uncompressed size", async () => {
+    const JSZip = (await import("jszip")).default;
+    const zip = new JSZip();
+    zip.file("word/document.xml", "0".repeat(25 * 1024 * 1024)); // compresses to a few KB
+    const buf = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
+    expect(buf.length).toBeLessThan(1024 * 1024); // passes the 1 MB upload cap...
+    expect(() => checkDocxSize(buf)).toThrow(/too large/); // ...but not the unzipped-size check
+    await expect(importFile("docx", buf)).rejects.toThrow();
+  });
+
+  it("accepts a normal .docx", async () => {
+    expect(() => checkDocxSize(readFileSync("samples/sample.docx"))).not.toThrow();
   });
 });
