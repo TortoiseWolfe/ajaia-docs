@@ -3,7 +3,7 @@
 A small collaborative document editor: create, rename, format, autosave, reopen, upload files as new documents, and
 share with other users as a viewer or editor.
 
-**Live:** LIVE_URL_PENDING
+**Live:** https://ajaia-docs-eight-green.vercel.app
 
 **Sign-in is mocked.** There are no passwords. The sign-in page is a "Continue as" picker over three seeded users, and
 the session is an httpOnly cookie signed with HMAC so it can't be edited by hand. Real auth was a deliberate cut.

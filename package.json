@@ -9,7 +9,9 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "db:seed": "tsx --env-file=.env.local scripts/seed.ts"
+    "db:seed": "tsx --env-file=.env.local scripts/seed.ts",
+    "check:browser": "node scripts/browser-check.mjs",
+    "check:api": "bash scripts/smoke.sh"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",
@@ -37,6 +39,7 @@
     "docx": "^9.15.2",
     "eslint": "^9",
     "eslint-config-next": "16.4.5",
+    "playwright": "^1.55.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5",
