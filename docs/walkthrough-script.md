@@ -4,6 +4,9 @@ Read at a relaxed pace. Each section is one shot in the recording; the bracket s
 appear as captions in the voice-over cut, so you can read along while it plays. Each caption stays on screen until the
 next one replaces it, with a pause of about a second and a half between them.
 
+The submitted video is narrated by an AI voice (Piper, offline) reading exactly this script; see AI_WORKFLOW.md,
+prompts 20 to 26.
+
 ---
 
 **1. Intro** [sign-in page]
