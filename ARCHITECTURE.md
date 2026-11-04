@@ -18,7 +18,9 @@ I ranked by what a reviewer would hit first and what would hurt most if it were 
 5. **Tests where bugs would be silent.** Access rules, the stale-save refusal and import fidelity, run against the
    real SQL schema.
 
-Everything else (real-time co-editing, comments, history) was cut so the above could be finished and verified.
+Real-time co-editing and comments were cut so the above could be finished and verified. With the core verified on
+production and time left, I added two stretch items: Markdown export, then version history, chosen because it
+deepens priority 2 (the person who loses a conflict no longer loses their edit).
 
 ## Shape of the system
 
@@ -47,6 +49,9 @@ Server pages (home, doc) render with the same access check, so a stranger never 
 users(id text pk, name, email unique)
 documents(id uuid pk, owner_id → users, title 1..200 chars, content jsonb, version int, created_at, updated_at)
 document_shares(document_id → documents, user_id → users, role 'viewer'|'editor', pk(document_id, user_id))
+documents.updated_by → users            -- who made the latest content save (null = the owner)
+document_versions(id uuid pk, document_id → documents, content jsonb, doc_version int,
+                  author_id → users, saved_at, kind 'edit'|'conflict')
 ```
 
 - **Content is stored as the editor's JSON**, not HTML. It round-trips exactly, it is what the editor loads natively,
@@ -83,8 +88,9 @@ other. I used **optimistic concurrency**:
 3. The server runs one statement:
    `UPDATE documents SET content=$2, version=version+1 WHERE id=$1 AND version=$3 RETURNING version`.
    Being a single statement, two concurrent saves can't both win.
-4. No row updated and the doc exists → **409**. The editor stops autosaving, becomes read-only, and says
-   "This document was changed by someone else. Reload to see the latest." with a Reload button.
+4. No row updated and the doc exists → **409**. The refused content is stored as a version (below). The editor stops
+   autosaving, becomes read-only, and says "This document was changed by someone else. Your edit was kept in History.
+   Reload to see the latest." with a Reload button.
 
 Autosave fires about 1 s after typing stops. If a save is in flight when more typing happens, one more save is
 queued for when it returns (with the new version), so the last keystrokes are never dropped and saves never race each
@@ -93,6 +99,23 @@ save hasn't landed.
 
 Rename is last-write-wins and does not bump the content version, so renaming in one tab doesn't knock an open editor
 in another tab into a conflict.
+
+## Version history
+
+The point is that nobody loses work, including the person who loses a conflict.
+
+- **When a version is kept.** Inside the same single save statement (a data-modifying CTE), the state being replaced
+  is copied to `document_versions` when a different person is now saving, when the last save is more than 5 minutes
+  old, or on restore. Unchanged content is never copied. The 1-second autosave therefore produces one version per
+  stretch of work, not one per keystroke, and the one-winner guarantee above still holds.
+- **Refused saves are kept.** A 409 stores the refused content as a `conflict` version, once per identical content,
+  and only when it was based on a real earlier version. Each person keeps the newest 5 per document, so stale saves
+  sent in a loop can't flood history (found by the automated security review).
+- **Restore** is an ordinary optimistic save of the old content that always keeps the current state first, so every
+  restore can be undone. A refused restore stores nothing. It is enabled only once the editor says Saved.
+- **Access:** owners and editors only, as in Google Docs (viewers 403, strangers 404). Version ids are always looked
+  up together with their document id, so a version id from another document is a 404.
+- **Preview** renders through a read-only editor with the same schema, never as raw HTML.
 
 ## Upload and import
 
@@ -114,12 +137,13 @@ large, unsupported type, couldn't save, conflict).
 
 ## Testing
 
-`npm test` (Vitest, 18 tests, about 2 s): access rules through the data layer on PGlite (owner, editor, viewer,
-stranger, upgrade, revoke, malformed id), stale-version refusal, Markdown/.docx/.txt import fidelity and HTML
-stripping, both zip-bomb guards, Markdown export.
+`npm test` (Vitest, 27 tests, about 2 s): access rules through the data layer on PGlite (owner, editor, viewer,
+stranger, upgrade, revoke, malformed id), stale-version refusal, version history (when snapshots are and aren't
+taken, refused edits kept once and capped, restore and undoing it, stale restore, a version id from another
+document), Markdown/.docx/.txt import fidelity and HTML stripping, both zip-bomb guards, Markdown export.
 
 Beyond unit tests, two scripts check the deployed app: `scripts/smoke.sh` (every API route as each user) and
-`scripts/browser-check.mjs` (Playwright driving the real editor, 22 checks, including the two-tab conflict and deleting from the UI).
+`scripts/browser-check.mjs` (Playwright driving the real editor, 26 checks, including the two-tab conflict, restoring the refused edit from History, and deleting from the UI).
 
 ## Deliberate cuts
 
@@ -128,6 +152,7 @@ Beyond unit tests, two scripts check the deployed app: `scripts/smoke.sh` (every
 | Real-time co-editing | Needs a sync layer (Yjs + a websocket service); the version check covers the safety need. | Yjs + Hocuspocus or Liveblocks, about 1 to 2 days. |
 | Real authentication | Not what's being evaluated; mocked sign-in shows the access model just as well. | Auth.js or Clerk; the `users` table and cookie check stay. |
 | Sharing by email to outside people | Needs invitations and real accounts. | Invite table + email, after real auth. |
-| Comments, version history | Each is its own feature with its own UI. | History: a `document_versions` table written on save. |
+| Comments | Its own feature with its own UI and threading. | A comments table anchored to text with a Tiptap mark, about a day. |
+| Diffs between versions, pruning old versions | Preview and restore already cover recovery. | `prosemirror-changeset` for diffs; a retention rule (every version for a day, then hourly). |
 | Images in documents, PDF upload | Needs file storage and a PDF text extractor; adds risk for little gain here. | Blob storage + Tiptap Image; `pdfjs` for text. |
 | Docker | Docker-first is my default, but this deploys to Vercel from source and the clock favored host Node. | A two-service compose file (app + Postgres). |

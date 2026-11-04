@@ -11,7 +11,7 @@ reconstructed at the end.
 | **Helper agent #1** (Claude Code subagent) | Wrote the Vitest suite on PGlite in parallel while the main session built the UI. Scoped to `tests/`, `samples/` and the Vitest config only. |
 | **Helper agent #2** (Claude Code code-review subagent) | A blind, read-only review of the finished code. Found three real bugs (below). |
 | **Helper agent #3** (Claude Code subagent) | A second review with a different brief: every doc claim against the code, and the deliverables against the assignment. |
-| **Automated security review** (Claude Code plugin, runs on each commit) | Flagged the .docx zip-bomb risk, twice (below). |
+| **Automated security review** (Claude Code plugin, runs on each commit) | Flagged the .docx zip-bomb risk, twice, and a way to flood version history (below). |
 | Vercel CLI, Neon, Vitest + PGlite, Playwright | Deploy, database, tests on real SQL, browser checks against production. |
 
 ## How the work was split
@@ -55,6 +55,19 @@ in the first three minutes and is summarized above.
     → Yes: the assignment grades "written and verbal communication", so the video uses my voice. Claude wrote the
     script and recorded the click path from the same script as captions.
 12. `where will I look for the script to practice reading it?` and `I'll need a clickable link to that`
+13. `so I'm waiting on you to make the video cut first then I play and talk over it on OBS?`
+14. `seems like we're making good time, while I'm working on my recordig should you be addressing the stretch goals or even finish them first?`
+    → Claude recommended one more piece that deepens what exists rather than a new surface: version history, with
+    refused saves kept, and a hard stop so it couldn't endanger the submission.
+15. `don't forget to hand off, context is getting long too?`
+    → A handoff note with the state of everything, so a fresh session could pick up cold.
+16. A fresh session: `/prep`, then the portal's submission page pasted in. Claude asked three questions. My answers:
+    a flattened copy for the portal box, no raw transcript in the folder, and
+    `I'm still practice reading it aloud, it maybe paced a little fast for me anyways, add the most impressive feature and recut it at a slower pace to help my reading and I'll keep practicing on the one we have.`
+    → Version history, built test-first, live on production in about 20 minutes.
+17. `also keep the transcript on screen as long as possibe so I can finish reading it`
+    → Each caption in the voice-over cut now stays up until the next one replaces it.
+18. `! npm run db:seed` (I ran the production schema change myself; see below)
 
 ## Changed or rejected AI output
 
@@ -71,6 +84,9 @@ in the first three minutes and is summarized above.
 | Upload and New document buttons had no error path for a dropped connection. | try/catch added; they recover and show a message. | Blind review agent. |
 | Second review agent: the docs said "20 browser checks" (stale), the share dialog said "only you can share or delete" with no delete button, the importer quietly accepted `.markdown` though the UI promises only .txt/.md/.docx, unused scaffold files, and SUBMISSION.md lacked explicit "included / working / incomplete / next" sections. | Fixed each; added an owner Delete button (with a browser check that deletes through the UI) rather than editing the text down. | Second review agent, given the assignment's deliverables list. |
 | My AI note said the plan was drafted "before the clock". | Corrected: the plan was drafted in the first three minutes of the clock (plan file saved 7:46 PM; timer started 7:43 PM). | Claude caught it while writing the video script and checked the plan file's save time before changing the claim. |
+| Claude tried to apply the version-history schema change to the production database itself. | Blocked by the permission layer; I ran it (`npm run db:seed`, which only adds the new column and table). | The permission classifier denied the call. |
+| Version history kept every refused save. | Only saves based on a real earlier version count, and each person keeps the newest 5 per document, so stale saves sent in a loop can't flood history. A test sends 7 and checks 5 remain. | Automated security review on commit. |
+| The first local run of the API checks for version history passed. | It didn't count: a server left over from the earlier session was still on the port and answered instead. Stopped it, rebuilt, re-ran on a fresh server (all pass), then deployed. | The new server's log said "address already in use"; the process start time showed 8:00 PM. |
 | Helper agent reported "12 passed". | Re-ran the suite myself and read the conflict test before counting it. | `npx vitest run` in the main session. |
 | My own cleanup command (`pkill -f "next start ..."`) matched and killed its own shell. | Re-ran it killing the server by process id. No files were affected. | The command exited 144; checked `git diff` before continuing. |
 
@@ -85,13 +101,14 @@ in the first three minutes and is summarized above.
 
 ## How it was verified
 
-- `npm test`: 18 tests pass (Vitest on PGlite running the real schema).
+- `npm test`: 27 tests pass (Vitest on PGlite running the real schema).
 - `npm run build`: clean, TypeScript checked; ESLint clean.
 - `scripts/smoke.sh` against production: every API route as Alice, Bob and Carol, including 401 without a cookie,
-  401 with a forged cookie, 403 for viewers writing, 404 for strangers, 409 on a stale save, uploads 201, PDF 415.
-- `scripts/browser-check.mjs` against production: **22/22** (create, all toolbar buttons, autosave to "Saved",
+  401 with a forged cookie, 403 for viewers writing, 404 for strangers, 409 on a stale save, uploads 201, PDF 415;
+  for history: viewer 403, stranger 404, refused save kept, stale restore 409, restore 200, malformed id 404.
+- `scripts/browser-check.mjs` against production: **26/26** (create, all toolbar buttons, autosave to "Saved",
   reload keeps formatting, export, share to Bob, Bob read-only, Carol 404, large-doc fast exit, two-tab conflict,
-  delete from the UI).
+  the refused edit found in History, previewed, restored and still there after a reload, delete from the UI).
 - The walkthrough video's recording runs on-screen checks too (bold and list survive reload, viewer has no toolbar,
   stranger sees the 404 page, .docx heading and list kept); a failed check fails the recording.
 - Screenshots in `docs/screenshots/` come from that production run.
