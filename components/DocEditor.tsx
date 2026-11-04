@@ -11,7 +11,7 @@ import { RoleBadge } from "./RoleBadge";
 import { ShareDialog } from "./ShareDialog";
 import { Toolbar } from "./Toolbar";
 
-type Status = "saved" | "dirty" | "saving" | "error" | "conflict";
+type Status = "saved" | "dirty" | "saving" | "error" | "conflict" | "stale";
 
 const STATUS_TEXT: Record<Status, string> = {
   saved: "Saved",
@@ -19,6 +19,7 @@ const STATUS_TEXT: Record<Status, string> = {
   saving: "Saving…",
   error: "Couldn't save",
   conflict: "This document was changed by someone else. Your edit was kept in History. Reload to see the latest.",
+  stale: "This document was changed by someone else. Reload to see the latest.",
 };
 
 const AUTOSAVE_MS = 1000;
@@ -58,6 +59,7 @@ export function DocEditor({ doc, role, initialShares, shareCandidates }: Props) 
   const inFlight = useRef(false);
   const again = useRef(false);
   const stopped = useRef(false); // set after a 409; no more saves from this tab
+  const restoring = useRef(false); // a restore is in flight: no typing, no autosave
   const saveRef = useRef<(opts?: { keepalive?: boolean }) => void>(() => {});
 
   const editor = useEditor({
@@ -67,7 +69,7 @@ export function DocEditor({ doc, role, initialShares, shareCandidates }: Props) 
     immediatelyRender: false,
     editorProps: { attributes: { class: "ProseMirror", "aria-label": "Document body" } },
     onUpdate: () => {
-      if (stopped.current) return;
+      if (stopped.current || restoring.current) return;
       setStatus("dirty");
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => saveRef.current(), AUTOSAVE_MS);
@@ -76,7 +78,7 @@ export function DocEditor({ doc, role, initialShares, shareCandidates }: Props) 
 
   const save = useCallback(
     async (opts: { keepalive?: boolean } = {}) => {
-      if (!editor || stopped.current) return;
+      if (!editor || stopped.current || restoring.current) return;
       if (timer.current) {
         clearTimeout(timer.current);
         timer.current = null;
@@ -149,6 +151,9 @@ export function DocEditor({ doc, role, initialShares, shareCandidates }: Props) 
     if (!editor) return "The editor isn't ready yet.";
     if (stopped.current) return "Reload to see the latest, then restore.";
     if (timer.current || inFlight.current) return "Wait until the document says Saved, then restore.";
+    // Lock the editor for the round trip, so typing can't race the restore (and be overwritten by it).
+    restoring.current = true;
+    editor.setEditable(false, false);
     try {
       const res = await fetch(`/api/documents/${doc.id}/versions/${versionId}`, {
         method: "POST",
@@ -156,15 +161,29 @@ export function DocEditor({ doc, role, initialShares, shareCandidates }: Props) 
         body: JSON.stringify({ version: versionRef.current }),
       });
       const body = await res.json().catch(() => ({}));
-      if (!res.ok) return body.error ?? "Couldn't restore. Try again.";
+      if (res.status === 409) {
+        // Someone saved since this tab loaded: any save from here would be refused too. Same as a save conflict,
+        // minus "your edit was kept" (a restore needs Saved, so there was no unsaved edit to keep).
+        stopped.current = true;
+        setStatus("stale");
+        return body.error ?? STATUS_TEXT.stale;
+      }
+      if (!res.ok) {
+        editor.setEditable(true, false);
+        return body.error ?? "Couldn't restore. Try again.";
+      }
       editor.commands.setContent(body.content, { emitUpdate: false }); // no autosave of what was just saved
       versionRef.current = body.version;
+      editor.setEditable(true, false);
       setErrorDetail(null);
       setStatus("saved");
       setHistoryOpen(false);
       return null;
     } catch {
+      editor.setEditable(true, false);
       return "Couldn't reach the server. Try again.";
+    } finally {
+      restoring.current = false;
     }
   }
 
@@ -196,7 +215,7 @@ export function DocEditor({ doc, role, initialShares, shareCandidates }: Props) 
               role="status"
               aria-live="polite"
               className={
-                status === "conflict" || status === "error"
+                status === "conflict" || status === "stale" || status === "error"
                   ? "font-medium text-red-700"
                   : status === "saved"
                     ? "text-stone-500"
@@ -212,7 +231,7 @@ export function DocEditor({ doc, role, initialShares, shareCandidates }: Props) 
               Retry
             </button>
           )}
-          {status === "conflict" && (
+          {(status === "conflict" || status === "stale") && (
             <button className="rounded bg-stone-900 px-2.5 py-1 text-white" onClick={() => window.location.reload()}>
               Reload
             </button>

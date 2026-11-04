@@ -125,12 +125,12 @@ Done when: production URL works in a private window as Alice, Bob and Carol; npm
 </details>
 
 <details>
-<summary>How I used AI: 18 prompts, 16 corrections logged, 5 AI tools</summary>
+<summary>How I used AI: 19 prompts, 17 corrections logged, 5 AI tools</summary>
 
 The full log, with every correction and how it was caught, is in AI_WORKFLOW.md. The short version follows.
 
 <details>
-<summary>The prompts, word for word (18)</summary>
+<summary>The prompts, word for word (19)</summary>
 
 Prompt 1, minute 5, to Claude Code (Opus). Start the build from the plan I approved at minute 3.
 
@@ -188,7 +188,7 @@ I'll need a clickable link to that
 > and missing "working / incomplete / next" sections; all fixed. The video uses my voice because the assignment grades
 > verbal communication.
 
-Prompts 13 to 18, minutes 44 to 69: the voice-over plan, more stretch work while I practiced, a handoff, then a fresh
+Prompts 13 to 19, minutes 44 to 78: the voice-over plan, more stretch work while I practiced, a handoff, then a fresh
 session where I pasted in the portal page and asked for the most impressive feature and a slower cut.
 
 ```text
@@ -198,10 +198,12 @@ don't forget to hand off, context is getting long too?
 I'm still practice reading it aloud, it maybe paced a little fast for me anyways, add the most impressive feature and recut it at a slower pace to help my reading and I'll keep practicing on the one we have.
 also keep the transcript on screen as long as possibe so I can finish reading it
 ! npm run db:seed
+let' also use the tmux subagent to run a code review on it for good measure?
 ```
 
 > Version history, built test-first and live on production in about 20 minutes. Claude's own attempt at the
-> production schema change was blocked by the permission layer, so I ran it.
+> production schema change was blocked by the permission layer, so I ran it. A second blind review of just that
+> feature found four smaller issues; all fixed and redeployed.
 
 </details>
 
@@ -227,7 +229,7 @@ pastes about 90 KB, leaves within a second, and checks the server.
 
 - Claude Code, main session: plan, all code, deploys, verification scripts, docs.
 - Helper agent: wrote the test suite in parallel.
-- Review agent: blind code review, found three real bugs.
+- Review agents: two blind code reviews. The first found three real bugs; the second, of version history only, four smaller ones.
 - Second review agent: checked every doc claim against the code and the deliverables against the assignment.
 - Automated security review on each commit: caught the .docx zip-bomb risk twice, and a way to flood version history.
 
@@ -376,6 +378,7 @@ Clock times come from the git commit history, which is public in the code link.
 | 39 | Walkthrough script written; click path recorded on production from the same script |
 | 53 | Fresh session; asked for the most impressive feature and a slower cut to read along with |
 | 70 | Version history live on production: 27 tests, 26/26 browser checks, every API check |
+| 80 | Slower walkthrough cut ready; second blind review's four fixes shipped |
 | VIDEO_MINUTE | Walkthrough video recorded |
 | SUBMIT_MINUTE | Submitted |
 

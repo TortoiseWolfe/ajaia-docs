@@ -11,6 +11,7 @@ reconstructed at the end.
 | **Helper agent #1** (Claude Code subagent) | Wrote the Vitest suite on PGlite in parallel while the main session built the UI. Scoped to `tests/`, `samples/` and the Vitest config only. |
 | **Helper agent #2** (Claude Code code-review subagent) | A blind, read-only review of the finished code. Found three real bugs (below). |
 | **Helper agent #3** (Claude Code subagent) | A second review with a different brief: every doc claim against the code, and the deliverables against the assignment. |
+| **Helper agent #4** (Claude Code code-review subagent) | A blind review of the version-history code only. Found four smaller issues (below). |
 | **Automated security review** (Claude Code plugin, runs on each commit) | Flagged the .docx zip-bomb risk, twice, and a way to flood version history (below). |
 | Vercel CLI, Neon, Vitest + PGlite, Playwright | Deploy, database, tests on real SQL, browser checks against production. |
 
@@ -68,6 +69,9 @@ in the first three minutes and is summarized above.
 17. `also keep the transcript on screen as long as possibe so I can finish reading it`
     → Each caption in the voice-over cut now stays up until the next one replaces it.
 18. `! npm run db:seed` (I ran the production schema change myself; see below)
+19. `let' also use the tmux subagent to run a code review on it for good measure?` (the same words as prompt 10,
+    with the portal page pasted again)
+    → A blind review of the version-history code (below).
 
 ## Changed or rejected AI output
 
@@ -87,6 +91,7 @@ in the first three minutes and is summarized above.
 | Claude tried to apply the version-history schema change to the production database itself. | Blocked by the permission layer; I ran it (`npm run db:seed`, which only adds the new column and table). | The permission classifier denied the call. |
 | Version history kept every refused save. | Only saves based on a real earlier version count, and each person keeps the newest 5 per document, so stale saves sent in a loop can't flood history. A test sends 7 and checks 5 remain. | Automated security review on commit. |
 | The first local run of the API checks for version history passed. | It didn't count: a server left over from the earlier session was still on the port and answered instead. Stopped it, rebuilt, re-ran on a fresh server (all pass), then deployed. | The new server's log said "address already in use"; the process start time showed 8:00 PM. |
+| Version history as first shipped. | Four fixes: the editor locks while a restore is in flight (typing could race it); a rename no longer resets the 5-minute pause clock; keeping a refused edit is best effort, so it can never turn a 409 into a 500; a refused restore now shows Reload instead of letting the next autosave fail. Unbounded growth of normal history is left as "next" (pruning). | Blind review agent #4. I checked each finding against the code first; the rename fix has a test that fails on the old code. |
 | Helper agent reported "12 passed". | Re-ran the suite myself and read the conflict test before counting it. | `npx vitest run` in the main session. |
 | My own cleanup command (`pkill -f "next start ..."`) matched and killed its own shell. | Re-ran it killing the server by process id. No files were affected. | The command exited 144; checked `git diff` before continuing. |
 

@@ -5,6 +5,7 @@ import {
   getDocument,
   getVersion,
   listVersions,
+  renameDocument,
   restoreVersion,
   saveContent,
 } from "../lib/db/repo";
@@ -45,10 +46,11 @@ describe("version history snapshots", () => {
     expect(await listVersions(q, id)).toHaveLength(0);
   });
 
-  it("snapshots after a pause of more than five minutes", async () => {
+  it("snapshots after a pause of more than five minutes, and a rename doesn't reset that clock", async () => {
     const id = await newDoc();
     await saveContent(q, id, doc("before the break"), 1, "alice");
     await backdate(id, 6);
+    await renameDocument(q, id, "Renamed during the break");
     await saveContent(q, id, doc("after the break"), 2, "alice");
     const versions = await listVersions(q, id);
     expect(versions).toHaveLength(1);
@@ -68,6 +70,7 @@ describe("conflicts keep the refused edit", () => {
     const id = await newDoc();
     await saveContent(q, id, doc("bob got there first"), 1, "bob");
 
+    const editsBefore = (await listVersions(q, id)).filter((v) => v.kind === "edit").length;
     const stale = await saveContent(q, id, doc("alice's stale edit"), 1, "alice");
     expect(stale).toEqual({ ok: false, reason: "conflict", currentVersion: 2 });
     // The same refused content again (a retry, or the flush on leaving the page) is not duplicated.
@@ -76,6 +79,8 @@ describe("conflicts keep the refused edit", () => {
     const conflicts = (await listVersions(q, id)).filter((v) => v.kind === "conflict");
     expect(conflicts).toHaveLength(1);
     expect(conflicts[0]).toMatchObject({ author_id: "alice", doc_version: 1 });
+    // A refused save never writes an 'edit' snapshot.
+    expect((await listVersions(q, id)).filter((v) => v.kind === "edit")).toHaveLength(editsBefore);
     expect((await getVersion(q, id, conflicts[0].id))?.content).toEqual(doc("alice's stale edit"));
     // The winner's save is untouched.
     expect((await getDocument(q, id))?.content).toEqual(doc("bob got there first"));
