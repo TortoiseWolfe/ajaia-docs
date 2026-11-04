@@ -1,4 +1,5 @@
 import { generateJSON } from "@tiptap/html/server";
+import JSZip from "jszip";
 import mammoth from "mammoth";
 import { Marked } from "marked";
 import { extensions } from "./editor/extensions";
@@ -62,8 +63,37 @@ export function checkDocxSize(buf: Buffer): void {
   }
 }
 
+/**
+ * The header sizes above can lie. This counts the bytes actually produced by
+ * inflating each entry, chunk by chunk, and stops at the cap, so a crafted
+ * zip can't make us allocate past it. It uses JSZip, the same unzipper mammoth
+ * uses, so both see identical bytes (no parser differential).
+ */
+export async function checkDocxInflatedSize(buf: Buffer): Promise<void> {
+  const zip = await JSZip.loadAsync(buf); // reads the directory; inflates nothing yet
+  const files = Object.values(zip.files).filter((f) => !f.dir);
+  if (files.length > MAX_DOCX_ENTRIES) throw new Error("too many entries");
+  let total = 0;
+  for (const file of files) {
+    await new Promise<void>((resolve, reject) => {
+      const stream = file.nodeStream("nodebuffer");
+      stream
+        .on("data", (chunk: Buffer) => {
+          total += chunk.length;
+          if (total > MAX_DOCX_UNZIPPED_BYTES) {
+            stream.pause();
+            reject(new Error("uncompressed size too large"));
+          }
+        })
+        .on("error", reject)
+        .on("end", () => resolve());
+    });
+  }
+}
+
 export async function docxToHtml(buffer: Buffer): Promise<string> {
-  checkDocxSize(buffer);
+  checkDocxSize(buffer); // cheap: reject on declared sizes before inflating anything
+  await checkDocxInflatedSize(buffer); // honest: count real bytes, stop at the cap
   const result = await mammoth.convertToHtml({ buffer });
   return result.value;
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { checkDocxSize, importFile, kindFromName, titleFromName } from "../lib/import";
+import { checkDocxInflatedSize, checkDocxSize, importFile, kindFromName, titleFromName } from "../lib/import";
 import { buildSampleDocx } from "./helpers/docx-builder";
 import { findNodes, headingLevels, markTypes } from "./helpers/tiptap";
 
@@ -76,5 +76,27 @@ describe("docx zip-bomb guard", () => {
 
   it("accepts a normal .docx", async () => {
     expect(() => checkDocxSize(readFileSync("samples/sample.docx"))).not.toThrow();
+  });
+});
+
+describe("docx zip-bomb guard, lying headers", () => {
+  it("counts real inflated bytes when the zip header under-declares the size", async () => {
+    const JSZip = (await import("jszip")).default;
+    const zip = new JSZip();
+    zip.file("word/document.xml", "0".repeat(25 * 1024 * 1024));
+    const buf = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
+    // Rewrite every declared uncompressed size (local headers and central directory) to 100 bytes.
+    for (let i = 0; i < buf.length - 4; i++) {
+      const sig = buf.readUInt32LE(i);
+      if (sig === 0x04034b50) buf.writeUInt32LE(100, i + 22);
+      if (sig === 0x02014b50) buf.writeUInt32LE(100, i + 24);
+    }
+    expect(() => checkDocxSize(buf)).not.toThrow(); // the header check is fooled...
+    await expect(checkDocxInflatedSize(buf)).rejects.toThrow(/too large/); // ...the byte count is not
+    await expect(importFile("docx", buf)).rejects.toThrow();
+  });
+
+  it("passes the sample .docx", async () => {
+    await expect(checkDocxInflatedSize(readFileSync("samples/sample.docx"))).resolves.toBeUndefined();
   });
 });
