@@ -132,7 +132,7 @@ minutes and is summarized above.
     > `and we should still be able to export it to youtube for the unlisted link`
 
     → YouTube uploads go through Hatch. That's the agent that does my YouTube clicks, and it only picks up notes
-    between 8 AM and 10 PM, so the submitted link is the Drive copy of the re-rendered video.
+    between 8 AM and 10 PM, so I woke it (prompts 36 to 39).
 30.
     > `which three did we agree to skip?`
 
@@ -156,6 +156,21 @@ minutes and is summarized above.
     take, and five old cuts went to the Windows Recycle Bin. With prompt 35 I stopped recording, and the AI-voice
     video re-rendered from the fixed script is the final one.
 
+36.
+    > `no, now`
+
+37.
+    > `8am is too late`
+
+38.
+    > `I can wake Hatch up, you should have already sent it,`
+
+39.
+    > `tell Hatch to send it back to you when it's done, quite adding manual steps for me when you know what to do`
+
+    → Claude had told me Hatch would pick the note up in the morning. I woke Hatch, Claude rewrote the note so the
+    link came back to Claude rather than me, and Claude put the unlisted link into the submission.
+
 ## Changed or rejected AI output
 
 | What the AI proposed or did | What happened instead | How it was caught |
@@ -177,7 +192,8 @@ minutes and is summarized above.
 | Version history as first shipped. | Four fixes: the editor locks while a restore is in flight (typing could race it); a rename no longer resets the 5-minute pause clock; keeping a refused edit is best effort, so it can never turn a 409 into a 500; a refused restore now shows Reload instead of letting the next autosave fail. Unbounded growth of normal history is left as "next" (pruning). | Blind review agent 4. I checked each finding against the code first; the rename fix has a test that fails on the old code. |
 | After my first take, Claude cleaned up its audio (it was very quiet), put it under the clean picture, and opened the result on my screen. | I was recording a retake at that moment; it interrupted the take. With little time left, the final video uses the AI voice reading my script. A rule is now saved for future sessions: ask before opening anything on screen; "put it back on screen" means another take. | I noticed it mid-take. |
 | Claude handed over the video script and the submission text without running the voice check, then waved most of its hits off as email-only. | The full strict voice check now gates the video script and every submission doc. The script was fixed and the video re-rendered from it. | I asked whether the usual voice checks had run, then overruled the email-only call (prompts 27 and 28). |
-| Claude handed the YouTube upload back to me instead of routing it to Hatch, and gave me the quiet cut's file path instead of opening it on my screen. | A note went to Hatch, but it only works 8 AM to 10 PM, so the submitted link is the Drive copy. The cut was opened, and the screen rule now covers a cut I'm waiting on. | I asked both times: "why are you giving the youtube upload to me" and "why wouldn't you open it on my screen when it's ready?" |
+| Claude handed the YouTube upload back to me instead of routing it to Hatch, and gave me the quiet cut's file path instead of opening it on my screen. | A note went to Hatch, which only works 8 AM to 10 PM, and Claude said it would be picked up in the morning. I woke Hatch, and it uploaded the video as unlisted. The cut was opened, and the screen rule now covers a cut I'm waiting on. | I asked both times: "why are you giving the youtube upload to me" and "why wouldn't you open it on my screen when it's ready?" |
+| Claude told me Hatch would pick the YouTube note up at 8 AM, too late for the deadline, and planned to have me pass the link back. | I woke Hatch, and the note was rewritten so Hatch sends the link to Claude, which put it into the submission itself. | I said "8am is too late" and "quite adding manual steps for me when you know what to do". |
 | Helper agent reported "12 passed". | Re-ran the suite myself and read the conflict test before counting it. | `npx vitest run` in the main session. |
 | My own cleanup command (`pkill -f "next start ..."`) matched and killed its own shell. | Re-ran it killing the server by process id. No files were affected. | The command exited 144; checked `git diff` before continuing. |
 

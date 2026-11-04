@@ -8,7 +8,8 @@ It's deployed and working end to end; real-time co-editing and real sign-in are 
 - Live app: [Ajaia Docs, sign in as Alice, Bob or Carol](https://ajaia-docs-eight-green.vercel.app)
 - Code: [the source with full git history](https://github.com/TortoiseWolfe/ajaia-docs)
 - Drive folder: [everything listed below](https://drive.google.com/drive/folders/1wmhOH4Pk6CNueEoesRvVSCAt4tx1XK7A)
-- Walkthrough video: [4 minute 44 second walkthrough, narrated by an AI (artificial intelligence) voice reading my script](https://drive.google.com/file/d/1p2NOfOJFPFXRoiOgZm5Vo8p5nHLC-iyn/view)
+- Walkthrough video: [4 minute 44 second walkthrough on YouTube (unlisted), narrated by an AI (artificial intelligence) voice
+  reading my script](https://www.youtube.com/watch?v=MGZJtXxeW8Y). The same file is in the Drive folder: [Drive copy](https://drive.google.com/file/d/1p2NOfOJFPFXRoiOgZm5Vo8p5nHLC-iyn/view).
 
 **Test accounts:** no passwords. On the sign-in page choose Alice Chen, Bob Martinez or Carol Okafor. Bob can
 already edit Alice's "Q4 launch plan", and Alice can view Carol's "Team offsite notes", so the sharing flows are
@@ -24,7 +25,7 @@ review or run.
 | ARCHITECTURE.md | What I prioritized and why, data and access model, conflict handling, cuts. |
 | AI_WORKFLOW.md | AI tools used, where they sped things up, what I changed or rejected, how it was verified. |
 | VIDEO_URL.txt | The walkthrough video link. |
-| ajaia-docs-walkthrough.mp4 | The walkthrough video itself (the link above points to it). |
+| ajaia-docs-walkthrough.mp4 | The walkthrough video itself, the same file as the YouTube link. |
 | screenshots/ | Six screenshots from the production browser check: home, editor, share dialog, viewer, conflict, version history. |
 | ajaia-docs-source.zip | The full source (git archive of main: no node_modules, no environment files, no secrets). |
 
@@ -127,12 +128,12 @@ build was clean.
 </details>
 
 <details>
-<summary>How I used AI: 35 prompts, 20 corrections logged, 6 AI tools</summary>
+<summary>How I used AI: 39 prompts, 21 corrections logged, 6 AI tools</summary>
 
 The full log, with every correction and how it was caught, is in AI_WORKFLOW.md.
 
 <details>
-<summary>The prompts, word for word (35)</summary>
+<summary>The prompts, word for word (39)</summary>
 
 Prompt 1, minute 5, to Claude Code (Opus). Start the build from the plan I approved at minute 3.
 
@@ -234,7 +235,7 @@ and we should still be able to export it to youtube for the unlisted link
 > to an engineering submission. Claude hadn't run the check on the script or on this text. With the full check, the
 > script failed on 8 points and this text on 37. Both were fixed, and the video was re-rendered from the fixed script.
 > YouTube uploads go through Hatch. That's the agent that does my YouTube clicks, and it only picks up notes between
-> 8 AM and 10 PM, so the link here is the Drive copy.
+> 8 AM and 10 PM, so I woke it, and it uploaded the video as unlisted.
 
 Prompts 30 to 35, minutes 150 to 160, came while I tried one more voice-over take and then stopped to finish.
 
@@ -249,6 +250,18 @@ don't wait on me, finish the assignment
 
 > Five old cuts went to the Windows Recycle Bin, and the AI-voice video re-rendered from the fixed script is the final
 > one.
+
+Prompts 36 to 39, minutes 165 to 170, got the YouTube upload done tonight.
+
+```text
+no, now
+8am is too late
+I can wake Hatch up, you should have already sent it,
+tell Hatch to send it back to you when it's done, quite adding manual steps for me when you know what to do
+```
+
+> Claude had left Hatch a note and told me it would be picked up in the morning. I woke Hatch, and Claude rewrote the
+> note so the link came back to Claude, which put it into this text.
 
 </details>
 
@@ -413,7 +426,7 @@ them, but I didn't run them).
 </details>
 
 <details>
-<summary>Time log: about 167 minutes of 240</summary>
+<summary>Time log: about 176 minutes of 240</summary>
 
 Clock times come from the git commit history, which is public in the code link.
 
@@ -441,7 +454,8 @@ Clock times come from the git commit history, which is public in the code link.
 | 140 | Asked whether the voice check had run on the script and this text; it hadn't |
 | 146 | Full strict voice check on the script and every doc; video re-rendered from the fixed script |
 | 160 | Stopped the last voice-over take; the AI-voice video from the fixed script is final |
-| 167 | Final video and docs in the Drive folder; portal text ready to paste |
+| 167 | Final video and docs in the Drive folder |
+| 176 | Unlisted YouTube link from Hatch in the docs; portal text ready to paste |
 
 </details>
 
