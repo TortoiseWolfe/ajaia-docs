@@ -7,6 +7,7 @@ It is deployed and working end to end; real-time co-editing and real sign-in are
 
 - Live app: [Ajaia Docs, sign in as Alice, Bob or Carol](https://ajaia-docs-eight-green.vercel.app)
 - Code: [the source with full git history](https://github.com/TortoiseWolfe/ajaia-docs)
+- Drive folder: [everything listed below](https://drive.google.com/drive/folders/1wmhOH4Pk6CNueEoesRvVSCAt4tx1XK7A)
 - Walkthrough video: [3 to 5 minute walkthrough](VIDEO_LINK_PENDING)
 
 **Test accounts:** no passwords. On the sign-in page choose Alice Chen, Bob Martinez or Carol Okafor. Alice already
@@ -23,7 +24,7 @@ review or run.
 | ARCHITECTURE.md | What I prioritized and why, data and access model, conflict handling, cuts. |
 | AI_WORKFLOW.md | AI tools used, where they sped things up, what I changed or rejected, how it was verified. |
 | VIDEO_URL.txt | The walkthrough video link. |
-| screenshots/ | Five screenshots from the production browser check: home, editor, share dialog, viewer, conflict. |
+| screenshots/ | Six screenshots from the production browser check: home, editor, share dialog, viewer, conflict, version history. |
 | ajaia-docs-source.zip | The full source (git archive of main: no node_modules, no environment files, no secrets). |
 
 ## Status
@@ -32,21 +33,23 @@ review or run.
 sign-in picker; create, rename, edit with bold, italic, underline, H1 to H3, both list types, undo/redo; autosave with
 a visible status; reopen after refresh with formatting intact; upload .txt, .md and .docx as a new document; share as
 Viewer or Editor, change role, revoke; "My documents" and "Shared with me" with role badges; read-only editor for
-viewers; 404 for people without access; 409 and a reload message on a stale save; delete; Markdown export.
+viewers; 404 for people without access; 409 on a stale save, with the refused edit kept; version history with
+preview and restore; delete; Markdown export.
 
 **Incomplete or deliberately left out:**
-real-time co-editing and presence; comments; version history; real sign-in; inviting people by email; images in
-documents; PDF upload. On a conflict the second person must reload and re-apply their edit (their text stays on screen
-to copy, but there is no merge). Rename is last-write-wins. Tested in Chromium only.
+real-time co-editing and presence; comments; real sign-in; inviting people by email; images in documents; PDF upload;
+a diff view between versions. On a conflict the second person reloads; their refused edit is kept in History to
+restore or copy from, but nothing merges automatically. Rename is last-write-wins. Tested in Chromium only.
 
 **Next, with another 2 to 4 hours:**
-1. Version history with restore (about 1.5 hours): a versions table written on save, a list and a Restore button.
-2. Kinder conflicts (about 45 minutes): on a 409, save the user's text as a copy instead of only asking them to reload.
-3. A "who else is here" indicator (about 1 hour): a heartbeat every few seconds, shown as avatars on the document.
+1. A "who else is here" indicator (about 1 hour): a heartbeat every few seconds, shown as avatars on the document.
+2. Show what changed between versions (about 1 hour): a diff view in the History panel.
+3. Prune old versions (about 30 minutes): keep every version for a day, then one per hour. Refused edits are
+   already capped.
 4. Run the browser check in Firefox and WebKit too (about 15 minutes).
 
 <details>
-<summary>Approach and decomposition: 7 pieces, 7 built, 6 cut</summary>
+<summary>Approach and decomposition: 8 pieces, 8 built, 5 cut</summary>
 
 Get a live URL with a real database first, so every later check happens where the reviewer will look.
 
@@ -73,11 +76,17 @@ Upload: a .txt, .md or .docx file becomes a new editable document, keeping headi
 
 Tests where a bug would be silent: access rules, stale saves, import fidelity.
 
-> Vitest on PGlite (Postgres in WebAssembly) running the real db/schema.sql. 18 tests.
+> Vitest on PGlite (Postgres in WebAssembly) running the real db/schema.sql. 27 tests.
 
 Stretch: export any document to Markdown.
 
 > One button, turndown on the editor's HTML. lib/editor/export-markdown.ts
+
+Second stretch: version history, so the person who loses a conflict doesn't lose their edit.
+
+> Versions written inside the same single save statement; a refused save kept as a version (newest 5 per person);
+> preview and restore, which keeps the current text first so it can be undone. lib/db/repo.ts,
+> components/HistoryPanel.tsx
 
 <details>
 <summary>The short spec I wrote first</summary>
@@ -107,7 +116,8 @@ Done when: production URL works in a private window as Alice, Bob and Carol; npm
 4. Click "Share", pick Bob, choose Viewer. Sign out, continue as Bob: the document is under "Shared with me" and
    read-only.
 5. Continue as Carol and paste the document's URL: "Document not found" (a 404).
-6. As Alice, open the same document in two tabs and type in both: the second tab to save is told to reload.
+6. As Alice, open the same document in two tabs and type in both: the second tab to save is told to reload. Reload
+   it and click History: its refused edit is there, marked "Kept after a conflict". Restore it.
 
 > Stack: Next.js 16 (App Router, TypeScript), Tiptap 3, Neon Postgres, zod, Vitest + PGlite, hosted on Vercel.
 > Sign-in is mocked by design: no password, pick a seeded user. The cookie is httpOnly and HMAC-signed.
@@ -115,12 +125,12 @@ Done when: production URL works in a private window as Alice, Bob and Carol; npm
 </details>
 
 <details>
-<summary>How I used AI: 12 prompts, 13 corrections logged, 5 AI tools</summary>
+<summary>How I used AI: 18 prompts, 16 corrections logged, 5 AI tools</summary>
 
 The full log, with every correction and how it was caught, is in AI_WORKFLOW.md. The short version follows.
 
 <details>
-<summary>The prompts, word for word (12)</summary>
+<summary>The prompts, word for word (18)</summary>
 
 Prompt 1, minute 5, to Claude Code (Opus). Start the build from the plan I approved at minute 3.
 
@@ -178,6 +188,21 @@ I'll need a clickable link to that
 > and missing "working / incomplete / next" sections; all fixed. The video uses my voice because the assignment grades
 > verbal communication.
 
+Prompts 13 to 18, minutes 44 to 69: the voice-over plan, more stretch work while I practiced, a handoff, then a fresh
+session where I pasted in the portal page and asked for the most impressive feature and a slower cut.
+
+```text
+so I'm waiting on you to make the video cut first then I play and talk over it on OBS?
+seems like we're making good time, while I'm working on my recordig should you be addressing the stretch goals or even finish them first?
+don't forget to hand off, context is getting long too?
+I'm still practice reading it aloud, it maybe paced a little fast for me anyways, add the most impressive feature and recut it at a slower pace to help my reading and I'll keep practicing on the one we have.
+also keep the transcript on screen as long as possibe so I can finish reading it
+! npm run db:seed
+```
+
+> Version history, built test-first and live on production in about 20 minutes. Claude's own attempt at the
+> production schema change was blocked by the permission layer, so I ran it.
+
 </details>
 
 <details>
@@ -204,9 +229,9 @@ pastes about 90 KB, leaves within a second, and checks the server.
 - Helper agent: wrote the test suite in parallel.
 - Review agent: blind code review, found three real bugs.
 - Second review agent: checked every doc claim against the code and the deliverables against the assignment.
-- Automated security review on each commit: caught the .docx zip-bomb risk twice.
+- Automated security review on each commit: caught the .docx zip-bomb risk twice, and a way to flood version history.
 
-> Model: Claude Opus. Session transcript exported with secrets scrubbed (included in the folder if attached).
+> Model: Claude Opus. Every prompt is quoted word for word above and in AI_WORKFLOW.md.
 
 </details>
 
@@ -221,7 +246,7 @@ described above. I started from an empty folder and the standard create-next-app
 </details>
 
 <details>
-<summary>Decisions and tradeoffs: 5 decisions</summary>
+<summary>Decisions and tradeoffs: 6 decisions</summary>
 
 <details>
 <summary>Decision 1: optimistic version check instead of real-time co-editing</summary>
@@ -231,7 +256,8 @@ I traded live cursors for a guarantee that nobody silently overwrites anyone, wh
 > Status: accepted. Problem: two people can edit a shared document; how do we stop lost updates in 4 hours?
 > Options considered: real-time sync (Yjs plus a websocket service); last-write-wins; version check with 409.
 > Chosen: version check, because it is one SQL statement, fully testable, and fails loudly instead of silently.
-> Cost: the second person must reload and re-apply their edit; real-time is the first thing I'd add next.
+> Cost: the second person must reload; their refused edit is kept in History to restore, but nothing merges
+> automatically. Real-time is the first thing I'd add next.
 
 </details>
 
@@ -277,25 +303,38 @@ Test against the real recipe, not a stand-in.
 
 </details>
 
+<details>
+<summary>Decision 6: keep a version when the hands change, not on every save</summary>
+
+History should show stretches of work, not every keystroke, and must never break the no-overwrite guarantee.
+
+> Status: accepted. Options: a version per save (the 1-second autosave would flood it); timed checkpoints only; a
+> version when a different person starts editing or after a 5-minute pause, plus every refused save. Chosen: the
+> last, written inside the same single save statement so only one save can still win. Cost: edits by one person
+> within 5 minutes are one version.
+
+</details>
+
 </details>
 
 <details>
-<summary>What I verified: 18 unit tests, 22 browser checks, every API route, all against production</summary>
+<summary>What I verified: 27 unit tests, 26 browser checks, every API route, all against production</summary>
 
 I checked it the way a reviewer will use it: on the live site, as each of the three people.
 
 > npm test, npm run build, ESLint, scripts/smoke.sh and scripts/browser-check.mjs against the production URL.
 
 ```text
-Test Files  4 passed (4)
-     Tests  18 passed (18)
+Test Files  5 passed (5)
+     Tests  27 passed (27)
 
 browser-check against https://ajaia-docs-eight-green.vercel.app
-22/22 checks passed
+26/26 checks passed
 
 smoke.sh against production
 api no cookie: 401 · forged cookie: 401 · stale save: 409 · stranger: 404 · viewer write: 403
 upload md / docx / txt: 201 · upload pdf: 415
+viewer history: 403 · stranger history: 404 · stale restore: 409 · restore: 200 · malformed version id: 404
 ```
 
 Not checked: behavior under heavy concurrent load, and browsers other than Chromium (the editor library supports
@@ -309,7 +348,7 @@ them, but I didn't run them).
 1. Real-time co-editing with presence: removes the reload step entirely. Yjs with a hosted provider, 1 to 2 days.
 2. Real sign-in and email invitations: needed before anyone outside a demo uses it. Auth.js plus an invites table,
    about 1 day.
-3. Version history with restore: the natural safety net next to autosave. A versions table written on save, half a day.
+3. Comments anchored to text: a comments table plus a Tiptap mark, about a day.
 4. Images and PDF import: blob storage plus the Tiptap image extension, and PDF text extraction, about 1 day.
 
 </details>
@@ -335,6 +374,8 @@ Clock times come from the git commit history, which is public in the code link.
 | 32 | Code published to a public GitHub repo after a secrets scan (gitleaks: no leaks) |
 | 37 | Second review agent checks every doc claim against the code; fixes and an owner Delete button; 22/22 on production |
 | 39 | Walkthrough script written; click path recorded on production from the same script |
+| 53 | Fresh session; asked for the most impressive feature and a slower cut to read along with |
+| 70 | Version history live on production: 27 tests, 26/26 browser checks, every API check |
 | VIDEO_MINUTE | Walkthrough video recorded |
 | SUBMIT_MINUTE | Submitted |
 

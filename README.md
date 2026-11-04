@@ -31,7 +31,11 @@ Sample files to upload are in `samples/` (`sample.md`, `sample.docx`, `sample.tx
   Someone without access gets 404, the same as a missing document.
 - **Export:** download any document you can read as Markdown (`.md`).
 - **Conflict safety:** each save sends the version it started from. If someone else saved first, the server refuses
-  with 409 and the editor says "This document was changed by someone else. Reload to see the latest."
+  with 409, keeps the refused edit in version history, and the editor says "This document was changed by someone
+  else. Your edit was kept in History. Reload to see the latest."
+- **Version history:** owners and editors open History to preview and restore earlier versions. A version is kept
+  when a different person starts editing, after a 5-minute pause, and for every refused save (newest 5 per person
+  per document). Restoring keeps the current text first, so a restore can be undone.
 
 ## Stack
 
@@ -64,19 +68,20 @@ With a linked Vercel project, `vercel env pull .env.local` fills the env file in
 
 | Command | Does |
 | --- | --- |
-| `npm test` | Vitest (18 tests): access rules, stale-save rejection, import, zip-bomb guards, export, on an in-memory Postgres (PGlite) running the real `db/schema.sql`. No Docker, no network. |
+| `npm test` | Vitest (27 tests): access rules, stale-save rejection, version history and restore, import, zip-bomb guards, export, on an in-memory Postgres (PGlite) running the real `db/schema.sql`. No Docker, no network. |
 | `npm run build` | Production build (TypeScript checked). |
 | `npm run lint` | ESLint. |
 | `npm run typecheck` | TypeScript, no emit. |
 | `npm run db:seed` | Schema + seed against `DATABASE_URL`. |
 | `npm run check:api -- <url>` | Calls every API route as Alice, Bob and Carol and prints status codes (401, 403, 404, 409, uploads). |
-| `npm run check:browser -- <url>` | Playwright drives the real editor: create, format, autosave, reload, export, share, viewer, 404, two-tab conflict. Saves `docs/screenshots/`. |
+| `npm run check:browser -- <url>` | Playwright drives the real editor: create, format, autosave, reload, export, share, viewer, 404, two-tab conflict, then restoring the refused edit from History. Saves `docs/screenshots/`. |
 
 ## Screenshots
 
 From the production run of `npm run check:browser`: [home](docs/screenshots/1-home-alice.png),
 [editor](docs/screenshots/2-editor-formatting.png), [share dialog](docs/screenshots/3-share-dialog.png),
-[viewer](docs/screenshots/4-viewer-bob.png), [conflict](docs/screenshots/5-conflict.png).
+[viewer](docs/screenshots/4-viewer-bob.png), [conflict](docs/screenshots/5-conflict.png),
+[version history](docs/screenshots/6-history.png).
 
 ## Docs
 
