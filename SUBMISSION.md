@@ -9,6 +9,42 @@ It is deployed and working end to end; real-time co-editing and real sign-in are
 - Code: [the source with full git history](https://github.com/TortoiseWolfe/ajaia-docs)
 - Walkthrough video: [3 to 5 minute walkthrough](VIDEO_LINK_PENDING)
 
+**Test accounts:** no passwords. On the sign-in page choose Alice Chen, Bob Martinez or Carol Okafor. Alice already
+shares "Q4 launch plan" with Bob as Editor, and Carol shares "Team offsite notes" with Alice as Viewer, so the sharing
+flows are visible on first sign-in. Sample files to upload are in the code's samples folder. Nothing costs money to
+review or run.
+
+## What's included in this folder
+
+| File | What it is |
+| --- | --- |
+| SUBMISSION.md | This file. |
+| README.md | Setup, environment variables, seeded users, commands, supported upload types. |
+| ARCHITECTURE.md | What I prioritized and why, data and access model, conflict handling, cuts. |
+| AI_WORKFLOW.md | AI tools used, where they sped things up, what I changed or rejected, how it was verified. |
+| VIDEO_URL.txt | The walkthrough video link. |
+| screenshots/ | Five screenshots from the production browser check: home, editor, share dialog, viewer, conflict. |
+| ajaia-docs-source.zip | The full source (git archive of main: no node_modules, no environment files, no secrets). |
+
+## Status
+
+**Working end to end** (checked on the live site as all three users):
+sign-in picker; create, rename, edit with bold, italic, underline, H1 to H3, both list types, undo/redo; autosave with
+a visible status; reopen after refresh with formatting intact; upload .txt, .md and .docx as a new document; share as
+Viewer or Editor, change role, revoke; "My documents" and "Shared with me" with role badges; read-only editor for
+viewers; 404 for people without access; 409 and a reload message on a stale save; delete; Markdown export.
+
+**Incomplete or deliberately left out:**
+real-time co-editing and presence; comments; version history; real sign-in; inviting people by email; images in
+documents; PDF upload. On a conflict the second person must reload and re-apply their edit (their text stays on screen
+to copy, but there is no merge). Rename is last-write-wins. Tested in Chromium only.
+
+**Next, with another 2 to 4 hours:**
+1. Version history with restore (about 1.5 hours): a versions table written on save, a list and a Restore button.
+2. Kinder conflicts (about 45 minutes): on a 409, save the user's text as a copy instead of only asking them to reload.
+3. A "who else is here" indicator (about 1 hour): a heartbeat every few seconds, shown as avatars on the document.
+4. Run the browser check in Firefox and WebKit too (about 15 minutes).
+
 <details>
 <summary>Approach and decomposition: 7 pieces, 7 built, 6 cut</summary>
 
@@ -79,12 +115,12 @@ Done when: production URL works in a private window as Alice, Bob and Carol; npm
 </details>
 
 <details>
-<summary>How I used AI: 8 prompts, 11 corrections logged, 4 AI tools</summary>
+<summary>How I used AI: 12 prompts, 13 corrections logged, 5 AI tools</summary>
 
 The full log, with every correction and how it was caught, is in AI_WORKFLOW.md. The short version follows.
 
 <details>
-<summary>The prompts, word for word (8)</summary>
+<summary>The prompts, word for word (12)</summary>
 
 Prompt 1, minute 5, to Claude Code (Opus). Start the build from the plan I approved at minute 3.
 
@@ -128,6 +164,20 @@ still don't see a link, what did you want me to click on?
 ! vercel deploy --prod --yes
 ```
 
+Prompts 9 to 12, minutes 29 to 40: answering its four questions (public repo, video, honesty line, Drive folder),
+asking for a second review with the full assignment pasted in, and the video script.
+
+```text
+let' also use the tmux subagent to run a code review on it for good measure?
+does verbal imply my voice directly, I'll need a script for the video walk through.
+where will I look for the script to practice reading it?
+I'll need a clickable link to that
+```
+
+> The second review checked every doc claim against the code and found stale counts, a promised Delete with no button,
+> and missing "working / incomplete / next" sections; all fixed. The video uses my voice because the assignment grades
+> verbal communication.
+
 </details>
 
 <details>
@@ -148,11 +198,12 @@ pastes about 90 KB, leaves within a second, and checks the server.
 </details>
 
 <details>
-<summary>Which tool did what: 4 AI tools</summary>
+<summary>Which tool did what: 5 AI tools</summary>
 
 - Claude Code, main session: plan, all code, deploys, verification scripts, docs.
 - Helper agent: wrote the test suite in parallel.
 - Review agent: blind code review, found three real bugs.
+- Second review agent: checked every doc claim against the code and the deliverables against the assignment.
 - Automated security review on each commit: caught the .docx zip-bomb risk twice.
 
 > Model: Claude Opus. Session transcript exported with secrets scrubbed (included in the folder if attached).
@@ -229,7 +280,7 @@ Test against the real recipe, not a stand-in.
 </details>
 
 <details>
-<summary>What I verified: 18 unit tests, 21 browser checks, every API route, all against production</summary>
+<summary>What I verified: 18 unit tests, 22 browser checks, every API route, all against production</summary>
 
 I checked it the way a reviewer will use it: on the live site, as each of the three people.
 
@@ -240,7 +291,7 @@ Test Files  4 passed (4)
      Tests  18 passed (18)
 
 browser-check against https://ajaia-docs-eight-green.vercel.app
-21/21 checks passed
+22/22 checks passed
 
 smoke.sh against production
 api no cookie: 401 · forged cookie: 401 · stale save: 409 · stranger: 404 · viewer write: 403
@@ -253,7 +304,7 @@ them, but I didn't run them).
 </details>
 
 <details>
-<summary>What I'd do next: 4 items, in priority order</summary>
+<summary>Later, beyond the next few hours: 4 items, in priority order</summary>
 
 1. Real-time co-editing with presence: removes the reload step entirely. Yjs with a hosted provider, 1 to 2 days.
 2. Real sign-in and email invitations: needed before anyone outside a demo uses it. Auth.js plus an invites table,
@@ -265,6 +316,8 @@ them, but I didn't run them).
 
 <details>
 <summary>Time log: TOTAL_PENDING minutes of 240</summary>
+
+Clock times come from the git commit history, which is public in the code link.
 
 | Minute | What happened |
 | --- | --- |
@@ -279,6 +332,9 @@ them, but I didn't run them).
 | 23 | Stronger .docx guard; Markdown export shipped (stretch) |
 | 27 | Three review-agent bugs fixed and proven; 21/21 on production |
 | 28 | Architecture, AI workflow and submission write-ups |
+| 32 | Code published to a public GitHub repo after a secrets scan (gitleaks: no leaks) |
+| 37 | Second review agent checks every doc claim against the code; fixes and an owner Delete button; 22/22 on production |
+| 39 | Walkthrough script written; click path recorded on production from the same script |
 | VIDEO_MINUTE | Walkthrough video recorded |
 | SUBMIT_MINUTE | Submitted |
 

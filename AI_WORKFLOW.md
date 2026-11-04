@@ -10,6 +10,7 @@ reconstructed at the end.
 | **Claude Code (Opus)**, main session | Planning, all application code, deploys, verification scripts, these docs. Run in a fresh session scoped to this folder only, so the transcript holds only this work. |
 | **Helper agent #1** (Claude Code subagent) | Wrote the Vitest suite on PGlite in parallel while the main session built the UI. Scoped to `tests/`, `samples/` and the Vitest config only. |
 | **Helper agent #2** (Claude Code code-review subagent) | A blind, read-only review of the finished code. Found three real bugs (below). |
+| **Helper agent #3** (Claude Code subagent) | A second review with a different brief: every doc claim against the code, and the deliverables against the assignment. |
 | **Automated security review** (Claude Code plugin, runs on each commit) | Flagged the .docx zip-bomb risk, twice (below). |
 | Vercel CLI, Neon, Vitest + PGlite, Playwright | Deploy, database, tests on real SQL, browser checks against production. |
 
@@ -44,6 +45,16 @@ in the first three minutes and is summarized above.
 7. `still don't see a link, what did you want me to click on?`
    → The link had been buried in progress notes; it was re-sent on its own line.
 8. `! vercel integration accept-terms neon --yes` (I ran it), then `! vercel deploy --prod --yes`
+9. Answers to four questions it asked me: publish a public GitHub repo (yes), how to make the video, the honesty
+   line (approved as written), create and share the Drive folder (yes).
+10. `let' also use the tmux subagent to run a code review on it for good measure?` (with the full assignment text
+    pasted from the portal)
+    → A second review agent, with a different brief from the first: check every claim in the docs against the code,
+    and the deliverables against the assignment's list.
+11. `does verbal imply my voice directly, I'll need a script for the video walk through.`
+    → Yes: the assignment grades "written and verbal communication", so the video uses my voice. Claude wrote the
+    script and recorded the click path from the same script as captions.
+12. `where will I look for the script to practice reading it?` and `I'll need a clickable link to that`
 
 ## Changed or rejected AI output
 
@@ -58,6 +69,8 @@ in the first three minutes and is summarized above.
 | Autosave flushed with `keepalive` on leaving the page. | Browsers refuse keepalive bodies over 64 KiB, so a large doc lost its last edits. Keepalive now only under 60 KB. | Blind review agent. I wrote a browser check that reproduces it: **fails on the old code, passes on the fix.** |
 | Save status went to "Saved" when a save returned. | If more typing arrived during that save, it now stays "Unsaved changes". | Blind review agent; confirmed by reading the timer logic. |
 | Upload and New document buttons had no error path for a dropped connection. | try/catch added; they recover and show a message. | Blind review agent. |
+| Second review agent: the docs said "20 browser checks" (stale), the share dialog said "only you can share or delete" with no delete button, the importer quietly accepted `.markdown` though the UI promises only .txt/.md/.docx, unused scaffold files, and SUBMISSION.md lacked explicit "included / working / incomplete / next" sections. | Fixed each; added an owner Delete button (with a browser check that deletes through the UI) rather than editing the text down. | Second review agent, given the assignment's deliverables list. |
+| My AI note said the plan was drafted "before the clock". | Corrected: the plan was drafted in the first three minutes of the clock (plan file saved 7:46 PM; timer started 7:43 PM). | Claude caught it while writing the video script and checked the plan file's save time before changing the claim. |
 | Helper agent reported "12 passed". | Re-ran the suite myself and read the conflict test before counting it. | `npx vitest run` in the main session. |
 | My own cleanup command (`pkill -f "next start ..."`) matched and killed its own shell. | Re-ran it killing the server by process id. No files were affected. | The command exited 144; checked `git diff` before continuing. |
 
@@ -76,6 +89,9 @@ in the first three minutes and is summarized above.
 - `npm run build`: clean, TypeScript checked; ESLint clean.
 - `scripts/smoke.sh` against production: every API route as Alice, Bob and Carol, including 401 without a cookie,
   401 with a forged cookie, 403 for viewers writing, 404 for strangers, 409 on a stale save, uploads 201, PDF 415.
-- `scripts/browser-check.mjs` against production: **21/21** (create, all toolbar buttons, autosave to "Saved",
-  reload keeps formatting, export, share to Bob, Bob read-only, Carol 404, large-doc fast exit, two-tab conflict).
+- `scripts/browser-check.mjs` against production: **22/22** (create, all toolbar buttons, autosave to "Saved",
+  reload keeps formatting, export, share to Bob, Bob read-only, Carol 404, large-doc fast exit, two-tab conflict,
+  delete from the UI).
+- The walkthrough video's recording runs on-screen checks too (bold and list survive reload, viewer has no toolbar,
+  stranger sees the 404 page, .docx heading and list kept); a failed check fails the recording.
 - Screenshots in `docs/screenshots/` come from that production run.
