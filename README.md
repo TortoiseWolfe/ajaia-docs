@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ajaia Docs
 
-## Getting Started
+A small collaborative document editor: create, rename, format, autosave, reopen, upload files as new documents, and
+share with other users as a viewer or editor.
 
-First, run the development server:
+**Live:** LIVE_URL_PENDING
+
+**Sign-in is mocked.** There are no passwords. The sign-in page is a "Continue as" picker over three seeded users, and
+the session is an httpOnly cookie signed with HMAC so it can't be edited by hand. Real auth was a deliberate cut.
+
+## Try it in two minutes
+
+| User | What they see on first sign-in |
+| --- | --- |
+| Alice Chen | Owns "Welcome to Ajaia Docs" and "Q4 launch plan" (shared with Bob as Editor). Has "Team offsite notes" from Carol as Viewer. |
+| Bob Martinez | "Q4 launch plan" under Shared with me, editable. |
+| Carol Okafor | Owns "Team offsite notes". Opening Alice's doc URLs gives a 404. |
+
+Sample files to upload are in `samples/` (`sample.md`, `sample.docx`, `sample.txt`).
+
+## Features
+
+- **Documents:** create, rename inline (click the title), edit, autosave about 1 s after typing stops with a visible
+  Saving / Saved / Couldn't save status, reopen from the home list.
+- **Formatting:** bold, italic, underline, headings 1 to 3, bulleted and numbered lists, undo/redo.
+- **Upload:** `.txt`, `.md` and `.docx` up to 1 MB become a new editable document. Headings, lists, bold, italic and
+  underline are kept. Anything else (images, tables, raw HTML, scripts) is dropped by the editor schema.
+- **Sharing:** the owner shares with a seeded user as **Viewer** (read-only) or **Editor**, changes the role, or
+  revokes. Home has "My documents" and "Shared with me" with owner names and role badges.
+- **Access on the server:** every API route and page asks one function (`lib/access.ts`) for the caller's role.
+  Someone without access gets 404, the same as a missing document.
+- **Conflict safety:** each save sends the version it started from. If someone else saved first, the server refuses
+  with 409 and the editor says "This document was changed by someone else. Reload to see the latest."
+
+## Stack
+
+Next.js 16 (App Router, TypeScript) on Vercel · Tiptap 3 (ProseMirror) · Neon Postgres via `@neondatabase/serverless`
+with plain SQL · zod · `marked` and `mammoth` for import · Vitest with PGlite for tests.
+
+Docker-first is my default for web projects. This one runs on host Node on purpose: it is a 4-hour build that deploys
+to Vercel from source, so a container would only have added setup time.
+
+## Run it locally
+
+Needs Node 22+ and a Postgres URL (Neon free tier works).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local      # then fill in DATABASE_URL and SESSION_SECRET
+npm run db:seed                 # creates tables and the three users + sample docs (safe to re-run)
+npm run dev                     # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+With a linked Vercel project, `vercel env pull .env.local` fills the env file instead.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable | What it is |
+| --- | --- |
+| `DATABASE_URL` | Postgres connection string (Neon). |
+| `SESSION_SECRET` | 32+ random characters; signs the session cookie. Required in production. |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Commands
 
-## Learn More
+| Command | Does |
+| --- | --- |
+| `npm test` | Vitest: access rules, stale-save rejection and import, on an in-memory Postgres (PGlite) running the real `db/schema.sql`. No Docker, no network. |
+| `npm run build` | Production build (TypeScript checked). |
+| `npm run lint` | ESLint. |
+| `npm run db:seed` | Schema + seed against `DATABASE_URL`. |
 
-To learn more about Next.js, take a look at the following resources:
+## Docs
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `ARCHITECTURE.md`: what was prioritized, data and access model, conflict handling, what was cut.
+- `AI_WORKFLOW.md`: how AI tools were used, what was changed or rejected, how it was verified.
+- `SUBMISSION.md`: what's included, what works, what's incomplete, what's next.
