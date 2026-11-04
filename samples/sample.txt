@@ -1,0 +1,3 @@
+Sample plain text document.
+
+Second paragraph, after a blank line.
