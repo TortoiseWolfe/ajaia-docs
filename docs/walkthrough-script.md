@@ -1,4 +1,4 @@
-# Walkthrough script (about 4.5 minutes, about 680 words)
+# Walkthrough script (about 4 minutes 45 seconds, about 680 words)
 
 Read at a relaxed pace. Each section is one shot in the recording; the bracket says what's on screen. The same words
 appear as captions in the voice-over cut, so you can read along while it plays. Each caption stays on screen until the

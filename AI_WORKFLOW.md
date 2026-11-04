@@ -131,7 +131,30 @@ minutes and is summarized above.
 29.
     > `and we should still be able to export it to youtube for the unlisted link`
 
-    → The re-rendered video is the one that goes to YouTube as an unlisted link.
+    → YouTube uploads go through Hatch. That's the agent that does my YouTube clicks, and it only picks up notes
+    between 8 AM and 10 PM, so the submitted link is the Drive copy of the re-rendered video.
+30.
+    > `which three did we agree to skip?`
+
+31.
+    > `why are you giving the youtube upload to me, if you can't do that directly then route it through Hatch`
+
+32.
+    > `do what you can with that, give me a quite version and I'll try my take again while you finish up`
+
+33.
+    > `you can delete the other unused takes to avoid confusion`
+
+34.
+    > `why wouldn't you open it on my screen when it's ready?`
+
+35.
+    > `don't wait on me, finish the assignment`
+
+    → Prompt 30 got the three rules set aside, plus a fourth flag: "Hi, I'm Jonathan" in the copy of the script kept with the code,
+    which the email check reads as the writer naming himself. Prompts 31 to 34 came while I tried one more voice-over
+    take, and five old cuts went to the Windows Recycle Bin. With prompt 35 I stopped recording, and the AI-voice
+    video re-rendered from the fixed script is the final one.
 
 ## Changed or rejected AI output
 
@@ -154,6 +177,7 @@ minutes and is summarized above.
 | Version history as first shipped. | Four fixes: the editor locks while a restore is in flight (typing could race it); a rename no longer resets the 5-minute pause clock; keeping a refused edit is best effort, so it can never turn a 409 into a 500; a refused restore now shows Reload instead of letting the next autosave fail. Unbounded growth of normal history is left as "next" (pruning). | Blind review agent 4. I checked each finding against the code first; the rename fix has a test that fails on the old code. |
 | After my first take, Claude cleaned up its audio (it was very quiet), put it under the clean picture, and opened the result on my screen. | I was recording a retake at that moment; it interrupted the take. With little time left, the final video uses the AI voice reading my script. A rule is now saved for future sessions: ask before opening anything on screen; "put it back on screen" means another take. | I noticed it mid-take. |
 | Claude handed over the video script and the submission text without running the voice check, then waved most of its hits off as email-only. | The full strict voice check now gates the video script and every submission doc. The script was fixed and the video re-rendered from it. | I asked whether the usual voice checks had run, then overruled the email-only call (prompts 27 and 28). |
+| Claude handed the YouTube upload back to me instead of routing it to Hatch, and gave me the quiet cut's file path instead of opening it on my screen. | A note went to Hatch, but it only works 8 AM to 10 PM, so the submitted link is the Drive copy. The cut was opened, and the screen rule now covers a cut I'm waiting on. | I asked both times: "why are you giving the youtube upload to me" and "why wouldn't you open it on my screen when it's ready?" |
 | Helper agent reported "12 passed". | Re-ran the suite myself and read the conflict test before counting it. | `npx vitest run` in the main session. |
 | My own cleanup command (`pkill -f "next start ..."`) matched and killed its own shell. | Re-ran it killing the server by process id. No files were affected. | The command exited 144; checked `git diff` before continuing. |
 

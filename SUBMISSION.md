@@ -8,7 +8,7 @@ It's deployed and working end to end; real-time co-editing and real sign-in are 
 - Live app: [Ajaia Docs, sign in as Alice, Bob or Carol](https://ajaia-docs-eight-green.vercel.app)
 - Code: [the source with full git history](https://github.com/TortoiseWolfe/ajaia-docs)
 - Drive folder: [everything listed below](https://drive.google.com/drive/folders/1wmhOH4Pk6CNueEoesRvVSCAt4tx1XK7A)
-- Walkthrough video: [4.5 minute walkthrough, narrated by an AI (artificial intelligence) voice reading my script](https://drive.google.com/file/d/1yf8S_-p9llcGyCh9e69GlS1PLahNxOYc/view)
+- Walkthrough video: [4 minute 44 second walkthrough, narrated by an AI (artificial intelligence) voice reading my script](https://drive.google.com/file/d/1p2NOfOJFPFXRoiOgZm5Vo8p5nHLC-iyn/view)
 
 **Test accounts:** no passwords. On the sign-in page choose Alice Chen, Bob Martinez or Carol Okafor. Bob can
 already edit Alice's "Q4 launch plan", and Alice can view Carol's "Team offsite notes", so the sharing flows are
@@ -127,12 +127,12 @@ build was clean.
 </details>
 
 <details>
-<summary>How I used AI: 29 prompts, 19 corrections logged, 6 AI tools</summary>
+<summary>How I used AI: 35 prompts, 20 corrections logged, 6 AI tools</summary>
 
 The full log, with every correction and how it was caught, is in AI_WORKFLOW.md.
 
 <details>
-<summary>The prompts, word for word (29)</summary>
+<summary>The prompts, word for word (35)</summary>
 
 Prompt 1, minute 5, to Claude Code (Opus). Start the build from the plan I approved at minute 3.
 
@@ -232,8 +232,23 @@ and we should still be able to export it to youtube for the unlisted link
 
 > The second one was followed by a pasted copy of Claude's reply, which had said most of the check's hits didn't apply
 > to an engineering submission. Claude hadn't run the check on the script or on this text. With the full check, the
-> script failed on 8 points and this text on 37. Both were fixed, the video was re-rendered from the fixed script, and
-> it went up on YouTube as an unlisted video.
+> script failed on 8 points and this text on 37. Both were fixed, and the video was re-rendered from the fixed script.
+> YouTube uploads go through Hatch. That's the agent that does my YouTube clicks, and it only picks up notes between
+> 8 AM and 10 PM, so the link here is the Drive copy.
+
+Prompts 30 to 35, minutes 150 to 160, came while I tried one more voice-over take and then stopped to finish.
+
+```text
+which three did we agree to skip?
+why are you giving the youtube upload to me, if you can't do that directly then route it through Hatch
+do what you can with that, give me a quite version and I'll try my take again while you finish up
+you can delete the other unused takes to avoid confusion
+why wouldn't you open it on my screen when it's ready?
+don't wait on me, finish the assignment
+```
+
+> Five old cuts went to the Windows Recycle Bin, and the AI-voice video re-rendered from the fixed script is the final
+> one.
 
 </details>
 
@@ -398,7 +413,7 @@ them, but I didn't run them).
 </details>
 
 <details>
-<summary>Time log: about 145 minutes of 240</summary>
+<summary>Time log: about 167 minutes of 240</summary>
 
 Clock times come from the git commit history, which is public in the code link.
 
@@ -425,7 +440,8 @@ Clock times come from the git commit history, which is public in the code link.
 | 136 | Final video: the AI voice reading my script, uploaded to the Drive folder |
 | 140 | Asked whether the voice check had run on the script and this text; it hadn't |
 | 146 | Full strict voice check on the script and every doc; video re-rendered from the fixed script |
-| SUBMIT_MINUTE | YouTube link in; Drive folder updated; portal text ready; submitted |
+| 160 | Stopped the last voice-over take; the AI-voice video from the fixed script is final |
+| 167 | Final video and docs in the Drive folder; portal text ready to paste |
 
 </details>
 
