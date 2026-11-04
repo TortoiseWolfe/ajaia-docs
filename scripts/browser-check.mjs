@@ -1,5 +1,6 @@
 // Drives the real UI in Chromium: sign in, create, format, autosave, reload,
-// share, viewer read-only, stranger 404, and the two-tab conflict.
+// share, viewer read-only, stranger 404, the two-tab conflict, and restoring the
+// refused edit from version history.
 // Saves screenshots to docs/screenshots/. Cleans up the document it creates.
 //   node scripts/browser-check.mjs https://ajaia-docs-eight-green.vercel.app
 import { mkdirSync } from "node:fs";
@@ -150,12 +151,28 @@ try {
   await tab1.locator(".ProseMirror h1").click();
   await tab1.keyboard.press("End");
   await tab1.keyboard.type(" (stale tab)");
-  await tab1.getByText("This document was changed by someone else. Reload to see the latest.").waitFor({ timeout: 15000 });
+  await tab1.getByText("This document was changed by someone else. Your edit was kept in History. Reload to see the latest.").waitFor({ timeout: 15000 });
   check("stale tab shows conflict message", true);
   await tab1.screenshot({ path: `${SHOTS}/5-conflict.png` });
   await tab1.reload();
   await tab1.locator(".ProseMirror h1").waitFor();
   check("reload shows the other tab's save", (await tab1.locator(".ProseMirror h1").innerText()) === "Big heading (tab 2)");
+
+  // Version history: the refused edit was kept, can be previewed, restored, and survives a reload
+  await tab1.getByRole("button", { name: "History" }).click();
+  const kept = tab1.getByRole("button", { name: /Unsaved edit by Alice Chen/ });
+  await kept.waitFor({ timeout: 10000 });
+  check("history lists the refused edit", true);
+  await kept.click();
+  await tab1.getByLabel("Version preview").getByText("Big heading (stale tab)").waitFor({ timeout: 10000 });
+  check("preview shows the refused edit", true);
+  await tab1.screenshot({ path: `${SHOTS}/6-history.png` });
+  await tab1.getByRole("button", { name: "Restore this version" }).click();
+  await tab1.getByRole("dialog").waitFor({ state: "detached", timeout: 10000 });
+  check("restore puts the refused edit back", (await tab1.locator(".ProseMirror h1").innerText()) === "Big heading (stale tab)");
+  await tab1.reload();
+  await tab1.locator(".ProseMirror h1").waitFor();
+  check("restored edit survives a reload", (await tab1.locator(".ProseMirror h1").innerText()) === "Big heading (stale tab)");
 
   // Owner deletes from the UI: confirm dialog, back home, gone from the list
   await tab2.close();

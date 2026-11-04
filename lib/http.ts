@@ -4,6 +4,9 @@ import type { z } from "zod";
 export const json = (body: unknown, status = 200) => NextResponse.json(body, { status });
 export const unauthorized = () => json({ error: "Sign in first." }, 401);
 export const notFound = () => json({ error: "Document not found." }, 404);
+export const CONFLICT_MESSAGE =
+  "This document was changed by someone else. Your edit was kept in History. Reload to see the latest.";
+
 export const forbidden = (msg = "You don't have permission to do that.") => json({ error: msg }, 403);
 
 export async function parseBody<T extends z.ZodType>(req: Request, schema: T) {

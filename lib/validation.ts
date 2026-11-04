@@ -23,6 +23,8 @@ export const patchDocSchema = z.union([
   z.object({ content: contentSchema, version: z.number().int().positive() }).strict(),
 ]);
 
+export const restoreSchema = z.object({ version: z.number().int().positive() }).strict();
+
 export const sessionSchema = z.object({ userId: z.string().min(1).max(64) });
 
 export const shareSchema = z.object({
