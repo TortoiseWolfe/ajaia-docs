@@ -88,6 +88,11 @@ try {
   check("bullet list kept", (await a.locator(".ProseMirror ul > li").count()) === 2);
   check("numbered list kept (undo/redo round-trip)", (await a.locator(".ProseMirror ol > li").innerText()) === "step one");
 
+  // Export to Markdown downloads a real .md file
+  const [download] = await Promise.all([a.waitForEvent("download"), a.getByRole("button", { name: "Export .md" }).click()]);
+  const mdText = await (await download.createReadStream()).toArray().then((c) => Buffer.concat(c).toString("utf8"));
+  check("export .md downloads with headings and list", download.suggestedFilename() === "Browser check.md" && mdText.includes("# Big heading") && /^-\s+item one$/m.test(mdText));
+
   // Share with Bob as Viewer
   await a.getByRole("button", { name: "Share" }).click();
   await a.getByLabel("Person").selectOption({ label: "Bob Martinez" });

@@ -33,6 +33,19 @@ export function DocEditor({ doc, role, initialShares, shareCandidates }: Props) 
   const [status, setStatus] = useState<Status>("saved");
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
+  const [currentTitle, setCurrentTitle] = useState(doc.title);
+
+  async function exportMarkdown() {
+    if (!editor) return;
+    const { htmlToMarkdown, markdownFilename } = await import("@/lib/editor/export-markdown");
+    const blob = new Blob([htmlToMarkdown(editor.getHTML())], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = markdownFilename(currentTitle);
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   // Save bookkeeping lives in refs so the editor's onUpdate callback always sees the latest.
   const versionRef = useRef(doc.version);
@@ -155,6 +168,13 @@ export function DocEditor({ doc, role, initialShares, shareCandidates }: Props) 
               Reload
             </button>
           )}
+          <button
+            className="rounded-md px-2.5 py-1.5 text-stone-700 hover:bg-stone-100"
+            onClick={exportMarkdown}
+            title="Download this document as Markdown"
+          >
+            Export .md
+          </button>
           {role === "owner" && (
             <button
               className="rounded-md border border-stone-300 bg-white px-3 py-1.5 font-medium hover:bg-stone-100"
@@ -166,7 +186,7 @@ export function DocEditor({ doc, role, initialShares, shareCandidates }: Props) 
         </div>
       </div>
 
-      <TitleField docId={doc.id} initial={doc.title} editable={canEdit} />
+      <TitleField docId={doc.id} initial={doc.title} editable={canEdit} onRenamed={setCurrentTitle} />
 
       <div className="mb-3 flex items-center gap-2 text-xs text-stone-500">
         {role === "owner" ? <span>You own this document</span> : <span>Owned by {doc.ownerName}</span>}
@@ -198,7 +218,17 @@ export function DocEditor({ doc, role, initialShares, shareCandidates }: Props) 
   );
 }
 
-function TitleField({ docId, initial, editable }: { docId: string; initial: string; editable: boolean }) {
+function TitleField({
+  docId,
+  initial,
+  editable,
+  onRenamed,
+}: {
+  docId: string;
+  initial: string;
+  editable: boolean;
+  onRenamed: (title: string) => void;
+}) {
   const [title, setTitle] = useState(initial);
   const [saved, setSaved] = useState(initial);
   const [error, setError] = useState<string | null>(null);
@@ -227,6 +257,7 @@ function TitleField({ docId, initial, editable }: { docId: string; initial: stri
     setError(null);
     setSaved(next);
     setTitle(next);
+    onRenamed(next);
   }
 
   if (!editable) return <h1 className="mb-1 text-3xl font-semibold tracking-tight">{initial}</h1>;
