@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Role, Share, User } from "@/lib/db/types";
 import { extensions } from "@/lib/editor/extensions";
+import { HistoryPanel } from "./HistoryPanel";
 import { RoleBadge } from "./RoleBadge";
 import { ShareDialog } from "./ShareDialog";
 import { Toolbar } from "./Toolbar";
@@ -17,7 +18,7 @@ const STATUS_TEXT: Record<Status, string> = {
   dirty: "Unsaved changes",
   saving: "Saving…",
   error: "Couldn't save",
-  conflict: "This document was changed by someone else. Reload to see the latest.",
+  conflict: "This document was changed by someone else. Your edit was kept in History. Reload to see the latest.",
 };
 
 const AUTOSAVE_MS = 1000;
@@ -34,6 +35,7 @@ export function DocEditor({ doc, role, initialShares, shareCandidates }: Props) 
   const [status, setStatus] = useState<Status>("saved");
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [currentTitle, setCurrentTitle] = useState(doc.title);
   const router = useRouter();
 
@@ -142,6 +144,30 @@ export function DocEditor({ doc, role, initialShares, shareCandidates }: Props) 
     };
   }, []);
 
+  /** Restore a version as an ordinary optimistic save; the server keeps the replaced text in history first. */
+  async function restoreVersion(versionId: string): Promise<string | null> {
+    if (!editor) return "The editor isn't ready yet.";
+    if (stopped.current) return "Reload to see the latest, then restore.";
+    if (timer.current || inFlight.current) return "Wait until the document says Saved, then restore.";
+    try {
+      const res = await fetch(`/api/documents/${doc.id}/versions/${versionId}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ version: versionRef.current }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) return body.error ?? "Couldn't restore. Try again.";
+      editor.commands.setContent(body.content, { emitUpdate: false }); // no autosave of what was just saved
+      versionRef.current = body.version;
+      setErrorDetail(null);
+      setStatus("saved");
+      setHistoryOpen(false);
+      return null;
+    } catch {
+      return "Couldn't reach the server. Try again.";
+    }
+  }
+
   async function deleteDoc() {
     if (!window.confirm(`Delete "${currentTitle}"? This can't be undone.`)) return;
     stopped.current = true; // no autosave into a deleted document
@@ -198,6 +224,15 @@ export function DocEditor({ doc, role, initialShares, shareCandidates }: Props) 
           >
             Export .md
           </button>
+          {canEdit && (
+            <button
+              className="rounded-md px-2.5 py-1.5 text-stone-700 hover:bg-stone-100"
+              onClick={() => setHistoryOpen(true)}
+              title="See and restore earlier versions"
+            >
+              History
+            </button>
+          )}
           {role === "owner" && (
             <button className="rounded-md px-2.5 py-1.5 text-red-700 hover:bg-red-50" onClick={deleteDoc}>
               Delete
@@ -233,6 +268,15 @@ export function DocEditor({ doc, role, initialShares, shareCandidates }: Props) 
           <EditorContent editor={editor} />
         </div>
       </div>
+
+      {canEdit && historyOpen && (
+        <HistoryPanel
+          docId={doc.id}
+          canRestore={status === "saved"}
+          onRestore={restoreVersion}
+          onClose={() => setHistoryOpen(false)}
+        />
+      )}
 
       {role === "owner" && shareOpen && (
         <ShareDialog

@@ -1,4 +1,4 @@
-import type { Doc, DocSummary, Query, Share, ShareRole, User } from "./types";
+import type { Doc, DocSummary, Query, Share, ShareRole, User, Version, VersionSummary } from "./types";
 
 // Plain SQL, parameterised everywhere. Every function takes the query function
 // first so tests can run it against PGlite.
@@ -66,28 +66,114 @@ export type SaveResult =
   | { ok: false; reason: "conflict"; currentVersion: number }
   | { ok: false; reason: "missing" };
 
+/** A pause longer than this between saves starts a new version in history. */
+export const SNAPSHOT_GAP_MINUTES = 5;
+
 /**
  * Optimistic concurrency: the write only lands if the row is still at the
  * version the client started editing from. One statement, so two concurrent
- * saves can't both win.
+ * saves can't both win, and the history snapshot is part of that same statement.
+ *
+ * History: the state being replaced is kept as a version when a different
+ * person is now saving, when the last save is older than SNAPSHOT_GAP_MINUTES,
+ * or when the caller forces it (restore). Unchanged content is never kept.
+ *
+ * A refused (stale) save is kept as a "conflict" version, so the person who
+ * lost the race doesn't lose their edit. Identical refused content is kept once.
  */
 export async function saveContent(
   q: Query,
   id: string,
   content: unknown,
   baseVersion: number,
+  userId: string,
+  opts: { snapshot?: boolean; keepRejected?: boolean } = {},
 ): Promise<SaveResult> {
+  const json = JSON.stringify(content);
   const rows = await q<{ version: number; updated_at: string }>(
-    `update documents
-        set content = $2::jsonb, version = version + 1, updated_at = now()
-      where id = $1 and version = $3
-      returning version, updated_at`,
-    [id, JSON.stringify(content), baseVersion],
+    `with prev as (
+       select id, content, version, updated_at, coalesce(updated_by, owner_id) as last_author
+         from documents
+        where id = $1::uuid and version = $3::int
+     ),
+     upd as (
+       update documents d
+          set content = $2::jsonb, version = d.version + 1, updated_at = now(), updated_by = $4::text
+         from prev
+        where d.id = prev.id and d.version = prev.version
+       returning d.version, d.updated_at
+     ),
+     snap as (
+       insert into document_versions (document_id, content, doc_version, author_id, saved_at, kind)
+       select prev.id, prev.content, prev.version, prev.last_author, prev.updated_at, 'edit'
+         from prev
+        where exists (select 1 from upd)
+          and prev.content is distinct from $2::jsonb
+          and ($5::boolean
+               or prev.last_author is distinct from $4::text
+               or prev.updated_at < now() - make_interval(mins => $6::int))
+     )
+     select version, updated_at from upd`,
+    [id, json, baseVersion, userId, opts.snapshot ?? false, SNAPSHOT_GAP_MINUTES],
   );
   if (rows[0]) return { ok: true, version: rows[0].version, updated_at: rows[0].updated_at };
-  const current = await q<{ version: number }>("select version from documents where id = $1", [id]);
+  const current = await q<{ version: number }>("select version from documents where id = $1::uuid", [id]);
   if (!current[0]) return { ok: false, reason: "missing" };
+  if (opts.keepRejected ?? true) {
+    await q(
+      `insert into document_versions (document_id, content, doc_version, author_id, kind)
+       select $1::uuid, $2::jsonb, $3::int, $4::text, 'conflict'
+        where not exists (
+          select 1 from document_versions
+           where document_id = $1::uuid and kind = 'conflict' and author_id = $4::text and content = $2::jsonb)`,
+      [id, json, baseVersion, userId],
+    );
+  }
   return { ok: false, reason: "conflict", currentVersion: current[0].version };
+}
+
+export async function listVersions(q: Query, docId: string): Promise<VersionSummary[]> {
+  return q<VersionSummary>(
+    `select v.id, v.kind, v.doc_version, v.saved_at, v.author_id, u.name as author_name
+       from document_versions v left join users u on u.id = v.author_id
+      where v.document_id = $1::uuid
+      order by v.saved_at desc, v.doc_version desc
+      limit 50`,
+    [docId],
+  );
+}
+
+/** Always scoped to the document, so a version id from another document is "not found". */
+export async function getVersion(q: Query, docId: string, versionId: string): Promise<Version | null> {
+  const rows = await q<Version>(
+    `select v.id, v.kind, v.doc_version, v.saved_at, v.author_id, u.name as author_name, v.content
+       from document_versions v left join users u on u.id = v.author_id
+      where v.id = $2::uuid and v.document_id = $1::uuid`,
+    [docId, versionId],
+  );
+  return rows[0] ?? null;
+}
+
+export type RestoreResult =
+  | { ok: true; version: number; updated_at: string; content: unknown }
+  | Exclude<SaveResult, { ok: true }>;
+
+/**
+ * Restore = an ordinary optimistic save of the old content, with the current
+ * state always kept first, so a restore can itself be undone from history.
+ * A refused restore isn't kept as a conflict edit: nothing new was written.
+ */
+export async function restoreVersion(
+  q: Query,
+  docId: string,
+  versionId: string,
+  baseVersion: number,
+  userId: string,
+): Promise<RestoreResult> {
+  const v = await getVersion(q, docId, versionId);
+  if (!v) return { ok: false, reason: "missing" };
+  const r = await saveContent(q, docId, v.content, baseVersion, userId, { snapshot: true, keepRejected: false });
+  return r.ok ? { ...r, content: v.content } : r;
 }
 
 export async function deleteDocument(q: Query, id: string): Promise<void> {

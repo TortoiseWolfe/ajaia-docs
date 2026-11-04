@@ -1,7 +1,7 @@
 import { canEdit, canRead, getRole, isOwner } from "@/lib/access";
 import { db } from "@/lib/db/neon";
 import { deleteDocument, getDocument, renameDocument, saveContent } from "@/lib/db/repo";
-import { forbidden, json, notFound, parseBody, unauthorized } from "@/lib/http";
+import { CONFLICT_MESSAGE, forbidden, json, notFound, parseBody, unauthorized } from "@/lib/http";
 import { currentUser } from "@/lib/session";
 import { patchDocSchema } from "@/lib/validation";
 
@@ -36,12 +36,12 @@ export async function PATCH(req: Request, ctx: Ctx) {
     return json({ title: body.data.title });
   }
 
-  const result = await saveContent(q, id, body.data.content, body.data.version);
+  const result = await saveContent(q, id, body.data.content, body.data.version, user.id);
   if (result.ok) return json({ version: result.version, updated_at: result.updated_at });
   if (result.reason === "missing") return notFound();
   return json(
     {
-      error: "This document was changed by someone else. Reload to see the latest.",
+      error: CONFLICT_MESSAGE,
       currentVersion: result.currentVersion,
     },
     409,

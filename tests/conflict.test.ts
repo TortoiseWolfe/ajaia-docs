@@ -13,11 +13,11 @@ const doc = (t: string) => ({ type: "doc", content: [{ type: "paragraph", conten
 describe("optimistic save", () => {
   it("accepts a fresh save, rejects a stale one, keeps first content", async () => {
     const { id } = await createDocument(q, "alice", "T", doc("start"));
-    const first = await saveContent(q, id, doc("first"), 1);
+    const first = await saveContent(q, id, doc("first"), 1, "alice");
     expect(first.ok).toBe(true);
     if (first.ok) expect(first.version).toBe(2);
 
-    const stale = await saveContent(q, id, doc("stale"), 1);
+    const stale = await saveContent(q, id, doc("stale"), 1, "alice");
     expect(stale).toEqual({ ok: false, reason: "conflict", currentVersion: 2 });
 
     const stored = await getDocument(q, id);
@@ -26,7 +26,7 @@ describe("optimistic save", () => {
   });
 
   it("reports missing for an unknown uuid", async () => {
-    const r = await saveContent(q, "99999999-9999-4999-8999-999999999999", doc("x"), 1);
+    const r = await saveContent(q, "99999999-9999-4999-8999-999999999999", doc("x"), 1, "alice");
     expect(r).toEqual({ ok: false, reason: "missing" });
   });
 });

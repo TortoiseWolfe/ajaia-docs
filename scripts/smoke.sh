@@ -22,9 +22,15 @@ echo "carol api: $(curl -s -o /dev/null -w '%{http_code}' -b "$D/carol" "$B/api/
 echo "share bob viewer: $(curl -s -b "$D/alice" -H "$J" -d '{"userId":"bob","role":"viewer"}' "$B/api/documents/$ID/shares")"
 echo "bob read: $(curl -s -o /dev/null -w '%{http_code}' -b "$D/bob" "$B/api/documents/$ID")  bob rename: $(curl -s -w ' %{http_code}' -b "$D/bob" -X PATCH -H "$J" -d '{"title":"nope"}' "$B/api/documents/$ID")"
 echo "bob shares: $(curl -s -w ' %{http_code}' -b "$D/bob" "$B/api/documents/$ID/shares")"
+echo "viewer history: $(curl -s -o /dev/null -w '%{http_code}' -b "$D/bob" "$B/api/documents/$ID/versions")  stranger history: $(curl -s -o /dev/null -w '%{http_code}' -b "$D/carol" "$B/api/documents/$ID/versions")"
 echo "bob list shared: $(curl -s -b "$D/bob" "$B/api/documents" | python3 -c 'import sys,json;print([(d["title"],d["role"]) for d in json.load(sys.stdin)["shared"]])')"
 curl -s -b "$D/alice" -H "$J" -d '{"userId":"bob","role":"editor"}' "$B/api/documents/$ID/shares" >/dev/null
 echo "bob as editor save v2: $(curl -s -w ' %{http_code}' -b "$D/bob" -X PATCH -H "$J" -d '{"content":{"type":"doc","content":[{"type":"paragraph"}]},"version":2}' "$B/api/documents/$ID")"
+HIST=$(curl -s -b "$D/alice" "$B/api/documents/$ID/versions")
+echo "history kinds (expect edit + conflict): $(echo "$HIST" | python3 -c 'import sys,json;print(sorted(v["kind"] for v in json.load(sys.stdin)["versions"]))')"
+VID=$(echo "$HIST" | python3 -c 'import sys,json;print(next(v["id"] for v in json.load(sys.stdin)["versions"] if v["kind"]=="edit"))')
+echo "stale restore: $(curl -s -o /dev/null -w '%{http_code}' -b "$D/alice" -H "$J" -d '{"version":1}' "$B/api/documents/$ID/versions/$VID")  restore: $(curl -s -w ' %{http_code}' -b "$D/alice" -H "$J" -d '{"version":3}' "$B/api/documents/$ID/versions/$VID" | tail -c 60)"
+echo "bad version id: $(curl -s -o /dev/null -w '%{http_code}' -b "$D/alice" "$B/api/documents/$ID/versions/not-a-uuid")"
 echo "revoke: $(curl -s -b "$D/alice" -X DELETE -H "$J" -d '{"userId":"bob"}' "$B/api/documents/$ID/shares")  bob after revoke: $(curl -s -o /dev/null -w '%{http_code}' -b "$D/bob" "$B/api/documents/$ID")"
 echo "forged cookie: $(curl -s -o /dev/null -w '%{http_code}' -H "cookie: $FORGED" "$B/api/documents")"
 R=$(curl -s -w ' %{http_code}' -b "$D/alice" -F "file=@$SAMPLES/sample.md" "$B/api/import"); echo "upload md: $R"; UP+=" $(echo "$R" | python3 -c 'import sys,json;print(json.loads(sys.stdin.read().rsplit(" ",1)[0])["id"])')"

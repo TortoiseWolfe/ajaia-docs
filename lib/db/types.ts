@@ -38,3 +38,18 @@ export interface Share {
   email: string;
   role: ShareRole;
 }
+
+export type VersionKind = "edit" | "conflict";
+
+export interface VersionSummary {
+  id: string;
+  kind: VersionKind;
+  doc_version: number;
+  saved_at: string;
+  author_id: string | null;
+  author_name: string | null;
+}
+
+export interface Version extends VersionSummary {
+  content: unknown;
+}
