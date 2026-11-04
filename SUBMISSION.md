@@ -8,7 +8,7 @@ It is deployed and working end to end; real-time co-editing and real sign-in are
 - Live app: [Ajaia Docs, sign in as Alice, Bob or Carol](https://ajaia-docs-eight-green.vercel.app)
 - Code: [the source with full git history](https://github.com/TortoiseWolfe/ajaia-docs)
 - Drive folder: [everything listed below](https://drive.google.com/drive/folders/1wmhOH4Pk6CNueEoesRvVSCAt4tx1XK7A)
-- Walkthrough video: [3 to 5 minute walkthrough](VIDEO_LINK_PENDING)
+- Walkthrough video: [4.5 minute walkthrough, narrated by an AI voice reading my script](https://drive.google.com/file/d/1yf8S_-p9llcGyCh9e69GlS1PLahNxOYc/view)
 
 **Test accounts:** no passwords. On the sign-in page choose Alice Chen, Bob Martinez or Carol Okafor. Alice already
 shares "Q4 launch plan" with Bob as Editor, and Carol shares "Team offsite notes" with Alice as Viewer, so the sharing
@@ -24,6 +24,7 @@ review or run.
 | ARCHITECTURE.md | What I prioritized and why, data and access model, conflict handling, cuts. |
 | AI_WORKFLOW.md | AI tools used, where they sped things up, what I changed or rejected, how it was verified. |
 | VIDEO_URL.txt | The walkthrough video link. |
+| ajaia-docs-walkthrough.mp4 | The walkthrough video itself (the link above points to it). |
 | screenshots/ | Six screenshots from the production browser check: home, editor, share dialog, viewer, conflict, version history. |
 | ajaia-docs-source.zip | The full source (git archive of main: no node_modules, no environment files, no secrets). |
 
@@ -125,12 +126,12 @@ Done when: production URL works in a private window as Alice, Bob and Carol; npm
 </details>
 
 <details>
-<summary>How I used AI: 19 prompts, 17 corrections logged, 5 AI tools</summary>
+<summary>How I used AI: 26 prompts, 18 corrections logged, 6 AI tools</summary>
 
 The full log, with every correction and how it was caught, is in AI_WORKFLOW.md. The short version follows.
 
 <details>
-<summary>The prompts, word for word (19)</summary>
+<summary>The prompts, word for word (26)</summary>
 
 Prompt 1, minute 5, to Claude Code (Opus). Start the build from the plan I approved at minute 3.
 
@@ -185,8 +186,8 @@ I'll need a clickable link to that
 ```
 
 > The second review checked every doc claim against the code and found stale counts, a promised Delete with no button,
-> and missing "working / incomplete / next" sections; all fixed. The video uses my voice because the assignment grades
-> verbal communication.
+> and missing "working / incomplete / next" sections; all fixed. I planned to narrate the video in my own voice,
+> since the assignment grades verbal communication; prompts 20 to 26 explain why the final uses an AI voice.
 
 Prompts 13 to 19, minutes 44 to 78: the voice-over plan, more stretch work while I practiced, a handoff, then a fresh
 session where I pasted in the portal page and asked for the most impressive feature and a slower cut.
@@ -204,6 +205,20 @@ let' also use the tmux subagent to run a code review on it for good measure?
 > Version history, built test-first and live on production in about 20 minutes. Claude's own attempt at the
 > production schema change was blocked by the permission layer, so I ran it. A second blind review of just that
 > feature found four smaller issues; all fixed and redeployed.
+
+Prompts 20 to 26, minutes 92 to 135: recording the voice-over. Two are paraphrased because of their language.
+
+```text
+mayb clip my lsst few seconds, what I improved after the script : "C:\Users\JonPo\Videos\2026-10-27 16-03-04.mkv"
+I closed it, put your video back on screen   (three times, before each take)
+[paraphrased] You opened a video on my screen and interrupted my take when I was almost done; prepare to hand off.
+[paraphrased] That ruined the take, so I deleted it.
+fuck it, I don't have time to keep doing takes, use the AI voice and get it finished
+```
+
+> My first take was complete but very quiet, and I wanted a better one. While I was recording it, Claude opened its
+> processed version of the first take on my screen and interrupted the retake. With the clock running down, the final
+> video uses an AI voice (Piper, offline) reading the script I approved; it opens with a "Narration: AI voice." label.
 
 </details>
 
@@ -225,13 +240,14 @@ pastes about 90 KB, leaves within a second, and checks the server.
 </details>
 
 <details>
-<summary>Which tool did what: 5 AI tools</summary>
+<summary>Which tool did what: 6 AI tools</summary>
 
 - Claude Code, main session: plan, all code, deploys, verification scripts, docs.
 - Helper agent: wrote the test suite in parallel.
 - Review agents: two blind code reviews. The first found three real bugs; the second, of version history only, four smaller ones.
 - Second review agent: checked every doc claim against the code and the deliverables against the assignment.
 - Automated security review on each commit: caught the .docx zip-bomb risk twice, and a way to flood version history.
+- Piper TTS (offline neural voice): the walkthrough narration, reading my script.
 
 > Model: Claude Opus. Every prompt is quoted word for word above and in AI_WORKFLOW.md.
 
@@ -356,7 +372,7 @@ them, but I didn't run them).
 </details>
 
 <details>
-<summary>Time log: TOTAL_PENDING minutes of 240</summary>
+<summary>Time log: about 145 minutes of 240</summary>
 
 Clock times come from the git commit history, which is public in the code link.
 
@@ -379,8 +395,9 @@ Clock times come from the git commit history, which is public in the code link.
 | 53 | Fresh session; asked for the most impressive feature and a slower cut to read along with |
 | 70 | Version history live on production: 27 tests, 26/26 browser checks, every API check |
 | 80 | Slower walkthrough cut ready; second blind review's four fixes shipped |
-| VIDEO_MINUTE | Walkthrough video recorded |
-| SUBMIT_MINUTE | Submitted |
+| 120 | My own voice-over take; a retake interrupted when Claude opened a video on my screen |
+| 136 | Final video: the AI voice reading my script, uploaded to the Drive folder |
+| 145 | Drive folder shared; portal text ready; submitted |
 
 </details>
 

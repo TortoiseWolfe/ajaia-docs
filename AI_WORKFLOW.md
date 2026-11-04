@@ -13,6 +13,7 @@ reconstructed at the end.
 | **Helper agent #3** (Claude Code subagent) | A second review with a different brief: every doc claim against the code, and the deliverables against the assignment. |
 | **Helper agent #4** (Claude Code code-review subagent) | A blind review of the version-history code only. Found four smaller issues (below). |
 | **Automated security review** (Claude Code plugin, runs on each commit) | Flagged the .docx zip-bomb risk, twice, and a way to flood version history (below). |
+| **Piper TTS** (offline neural voice, through my demo-video tool) | The walkthrough narration: an AI voice reading the script I approved (see prompts 20 to 26). |
 | Vercel CLI, Neon, Vitest + PGlite, Playwright | Deploy, database, tests on real SQL, browser checks against production. |
 
 ## How the work was split
@@ -72,6 +73,14 @@ in the first three minutes and is summarized above.
 19. `let' also use the tmux subagent to run a code review on it for good measure?` (the same words as prompt 10,
     with the portal page pasted again)
     → A blind review of the version-history code (below).
+20. `mayb clip my lsst few seconds, what I improved after the script : "C:\Users\JonPo\Videos\2026-10-27 16-03-04.mkv"`
+    → That path was an hour-long recording from October; my take hadn't saved yet. Claude said so instead of
+    clipping the wrong file.
+21. to 23. `I closed it, put your video back on screen` (three times, before each take)
+24. (paraphrased) You opened a video on my screen and interrupted my take when I was almost done; prepare to hand off.
+25. (paraphrased) That ruined the take, so I deleted it.
+26. `fuck it, I don't have time to keep doing takes, use the AI voice and get it finished`
+    → The final video uses the AI voice reading my script, labeled as such in its first seconds.
 
 ## Changed or rejected AI output
 
@@ -92,6 +101,7 @@ in the first three minutes and is summarized above.
 | Version history kept every refused save. | Only saves based on a real earlier version count, and each person keeps the newest 5 per document, so stale saves sent in a loop can't flood history. A test sends 7 and checks 5 remain. | Automated security review on commit. |
 | The first local run of the API checks for version history passed. | It didn't count: a server left over from the earlier session was still on the port and answered instead. Stopped it, rebuilt, re-ran on a fresh server (all pass), then deployed. | The new server's log said "address already in use"; the process start time showed 8:00 PM. |
 | Version history as first shipped. | Four fixes: the editor locks while a restore is in flight (typing could race it); a rename no longer resets the 5-minute pause clock; keeping a refused edit is best effort, so it can never turn a 409 into a 500; a refused restore now shows Reload instead of letting the next autosave fail. Unbounded growth of normal history is left as "next" (pruning). | Blind review agent #4. I checked each finding against the code first; the rename fix has a test that fails on the old code. |
+| After my first take, Claude cleaned up its audio (it was very quiet), put it under the clean picture, and opened the result on my screen. | I was recording a retake at that moment; it interrupted the take. With little time left, the final video uses the AI voice reading my script. A rule is now saved for future sessions: ask before opening anything on screen; "put it back on screen" means another take. | I noticed it mid-take. |
 | Helper agent reported "12 passed". | Re-ran the suite myself and read the conflict test before counting it. | `npx vitest run` in the main session. |
 | My own cleanup command (`pkill -f "next start ..."`) matched and killed its own shell. | Re-ran it killing the server by process id. No files were affected. | The command exited 144; checked `git diff` before continuing. |
 
