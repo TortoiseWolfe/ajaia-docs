@@ -112,7 +112,6 @@ export async function importFile(kind: ImportKind, data: Buffer): Promise<unknow
 export function kindFromName(name: string): ImportKind | null {
   const ext = name.toLowerCase().split(".").pop();
   if (ext === "txt" || ext === "md" || ext === "docx") return ext;
-  if (ext === "markdown") return "md";
   return null;
 }
 

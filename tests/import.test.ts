@@ -53,7 +53,7 @@ describe("file name helpers", () => {
   it("kindFromName", () => {
     expect(kindFromName("a.TXT")).toBe("txt");
     expect(kindFromName("a.md")).toBe("md");
-    expect(kindFromName("a.markdown")).toBe("md");
+    expect(kindFromName("a.markdown")).toBeNull(); // only the types the UI and README promise
     expect(kindFromName("a.docx")).toBe("docx");
     expect(kindFromName("a.pdf")).toBeNull();
   });

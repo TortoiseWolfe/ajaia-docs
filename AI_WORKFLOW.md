@@ -15,9 +15,10 @@ reconstructed at the end.
 
 ## How the work was split
 
-1. **Plan before code.** Before the clock started, Claude Code drafted the build plan from the assignment text in my
-   main terminal: the product slice, what's out, the stack, and phase checkpoints with clock times. I approved it.
-   The build then ran in a fresh session from that plan.
+1. **Plan before code.** In the first three minutes of the clock (the plan file was saved at 7:46 PM; the timer
+   started 7:43 PM), Claude Code turned the assignment text into a build plan in my main terminal: the product slice,
+   what's out, the stack, and phase checkpoints with clock times. I approved it. Account prep (Vercel sign-in, a test
+   deploy) was done earlier that day. The build then ran in a fresh session from that plan.
 2. **Deploy first.** The first deploy went out before feature work was clicked through, so every later check ran
    where the reviewer will look.
 3. **Parallel where independent.** Tests went to a helper agent with a narrow file scope while the main session built
@@ -27,7 +28,7 @@ reconstructed at the end.
 ## The prompts, word for word
 
 These are what I typed in the build session, in order. The plan-drafting conversation happened in my main terminal
-before the clock and is summarized above.
+in the first three minutes and is summarized above.
 
 1. `Read` (to start; the session found the approved plan file and began Phase 1)
 2. `are you making it docker first like all our other projects too?`

@@ -86,7 +86,7 @@ The full log, with every correction and how it was caught, is in AI_WORKFLOW.md.
 <details>
 <summary>The prompts, word for word (8)</summary>
 
-Prompt 1, minute 5, to Claude Code (Opus). Start the build from the plan approved before the clock.
+Prompt 1, minute 5, to Claude Code (Opus). Start the build from the plan I approved at minute 3.
 
 ```text
 Read

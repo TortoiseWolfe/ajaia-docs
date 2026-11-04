@@ -119,7 +119,7 @@ stranger, upgrade, revoke, malformed id), stale-version refusal, Markdown/.docx/
 stripping, both zip-bomb guards, Markdown export.
 
 Beyond unit tests, two scripts check the deployed app: `scripts/smoke.sh` (every API route as each user) and
-`scripts/browser-check.mjs` (Playwright driving the real editor, 20 checks, including the two-tab conflict).
+`scripts/browser-check.mjs` (Playwright driving the real editor, 22 checks, including the two-tab conflict and deleting from the UI).
 
 ## Deliberate cuts
 

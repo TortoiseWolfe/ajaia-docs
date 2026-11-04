@@ -2,7 +2,6 @@ import { z } from "zod";
 
 export const MAX_CONTENT_BYTES = 512 * 1024; // serialized editor JSON
 export const MAX_UPLOAD_BYTES = 1024 * 1024; // 1 MB
-export const UPLOAD_TYPES = [".txt", ".md", ".docx"] as const;
 
 export const titleSchema = z
   .string()

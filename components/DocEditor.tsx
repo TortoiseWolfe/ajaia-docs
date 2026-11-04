@@ -2,6 +2,7 @@
 
 import { EditorContent, useEditor } from "@tiptap/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Role, Share, User } from "@/lib/db/types";
 import { extensions } from "@/lib/editor/extensions";
@@ -34,6 +35,8 @@ export function DocEditor({ doc, role, initialShares, shareCandidates }: Props) 
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [currentTitle, setCurrentTitle] = useState(doc.title);
+  const router = useRouter();
+
 
   async function exportMarkdown() {
     if (!editor) return;
@@ -139,6 +142,22 @@ export function DocEditor({ doc, role, initialShares, shareCandidates }: Props) 
     };
   }, []);
 
+  async function deleteDoc() {
+    if (!window.confirm(`Delete "${currentTitle}"? This can't be undone.`)) return;
+    stopped.current = true; // no autosave into a deleted document
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+    const res = await fetch(`/api/documents/${doc.id}`, { method: "DELETE" });
+    if (!res.ok) {
+      stopped.current = false;
+      setErrorDetail("Couldn't delete the document.");
+      setStatus("error");
+      return;
+    }
+    router.push("/");
+    router.refresh();
+  }
+
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-6">
       <div className="mb-3 flex items-center justify-between gap-4 text-sm">
@@ -179,6 +198,11 @@ export function DocEditor({ doc, role, initialShares, shareCandidates }: Props) 
           >
             Export .md
           </button>
+          {role === "owner" && (
+            <button className="rounded-md px-2.5 py-1.5 text-red-700 hover:bg-red-50" onClick={deleteDoc}>
+              Delete
+            </button>
+          )}
           {role === "owner" && (
             <button
               className="rounded-md border border-stone-300 bg-white px-3 py-1.5 font-medium hover:bg-stone-100"

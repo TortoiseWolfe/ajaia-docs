@@ -43,7 +43,8 @@ to Vercel from source, so a container would only have added setup time.
 
 ## Run it locally
 
-Needs Node 22+ and a Postgres URL (Neon free tier works).
+Needs Node 22 or newer (built and tested on Node 24) and a Postgres URL. The Neon free tier works: no paid services
+are needed to run or review this.
 
 ```bash
 npm install
@@ -66,9 +67,16 @@ With a linked Vercel project, `vercel env pull .env.local` fills the env file in
 | `npm test` | Vitest (18 tests): access rules, stale-save rejection, import, zip-bomb guards, export, on an in-memory Postgres (PGlite) running the real `db/schema.sql`. No Docker, no network. |
 | `npm run build` | Production build (TypeScript checked). |
 | `npm run lint` | ESLint. |
+| `npm run typecheck` | TypeScript, no emit. |
 | `npm run db:seed` | Schema + seed against `DATABASE_URL`. |
 | `npm run check:api -- <url>` | Calls every API route as Alice, Bob and Carol and prints status codes (401, 403, 404, 409, uploads). |
 | `npm run check:browser -- <url>` | Playwright drives the real editor: create, format, autosave, reload, export, share, viewer, 404, two-tab conflict. Saves `docs/screenshots/`. |
+
+## Screenshots
+
+From the production run of `npm run check:browser`: [home](docs/screenshots/1-home-alice.png),
+[editor](docs/screenshots/2-editor-formatting.png), [share dialog](docs/screenshots/3-share-dialog.png),
+[viewer](docs/screenshots/4-viewer-bob.png), [conflict](docs/screenshots/5-conflict.png).
 
 ## Docs
 

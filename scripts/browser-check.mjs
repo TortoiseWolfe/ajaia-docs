@@ -156,13 +156,21 @@ try {
   await tab1.reload();
   await tab1.locator(".ProseMirror h1").waitFor();
   check("reload shows the other tab's save", (await tab1.locator(".ProseMirror h1").innerText()) === "Big heading (tab 2)");
+
+  // Owner deletes from the UI: confirm dialog, back home, gone from the list
+  await tab2.close();
+  tab1.once("dialog", (d) => d.accept());
+  await tab1.getByRole("button", { name: "Delete" }).click();
+  await tab1.waitForURL(`${BASE}/`);
+  await tab1.getByText("My documents").waitFor();
+  check("owner deletes from the UI", (await tab1.getByText("Browser check").count()) === 0);
 } catch (err) {
   check("script ran to the end", false, String(err).split("\n")[0]);
 } finally {
   if (docUrl && alice) {
     const id = docUrl.split("/").pop();
     const res = await alice.page.request.delete(`${BASE}/api/documents/${id}`);
-    console.log(`cleanup: deleted test doc (${res.status()})`);
+    console.log(`cleanup: test doc ${res.status() === 404 ? "already deleted" : `deleted (${res.status()})`}`);
   }
   await browser.close();
 }

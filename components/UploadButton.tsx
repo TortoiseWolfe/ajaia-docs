@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
-const ACCEPT = ".txt,.md,.markdown,.docx,text/plain,text/markdown,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+const ACCEPT = ".txt,.md,.docx,text/plain,text/markdown,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
 export function UploadButton() {
   const router = useRouter();
