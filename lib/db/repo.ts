@@ -57,8 +57,12 @@ export async function getDocument(q: Query, id: string): Promise<Doc | null> {
   return rows[0] ?? null;
 }
 
+/**
+ * Leaves updated_at alone: it means "content last edited" (shown on the home list, and the clock for the
+ * history pause rule), so a rename must not reset it.
+ */
 export async function renameDocument(q: Query, id: string, title: string): Promise<void> {
-  await q("update documents set title = $2, updated_at = now() where id = $1", [id, title]);
+  await q("update documents set title = $2 where id = $1", [id, title]);
 }
 
 export type SaveResult =
@@ -75,7 +79,8 @@ export const MAX_CONFLICTS_PER_AUTHOR = 5;
 /**
  * Optimistic concurrency: the write only lands if the row is still at the
  * version the client started editing from. One statement, so two concurrent
- * saves can't both win, and the history snapshot is part of that same statement.
+ * saves can't both win, and the history snapshot is part of that same statement
+ * (a refused save's copy, below, is written afterwards and is best effort).
  *
  * History: the state being replaced is kept as a version when a different
  * person is now saving, when the last save is older than SNAPSHOT_GAP_MINUTES,
@@ -125,24 +130,31 @@ export async function saveContent(
   const current = await q<{ version: number }>("select version from documents where id = $1::uuid", [id]);
   if (!current[0]) return { ok: false, reason: "missing" };
   if ((opts.keepRejected ?? true) && baseVersion < current[0].version) {
-    await q(
-      `insert into document_versions (document_id, content, doc_version, author_id, kind)
-       select $1::uuid, $2::jsonb, $3::int, $4::text, 'conflict'
-        where not exists (
-          select 1 from document_versions
-           where document_id = $1::uuid and kind = 'conflict' and author_id = $4::text and content = $2::jsonb)`,
-      [id, json, baseVersion, userId],
-    );
-    await q(
-      `delete from document_versions
-        where id in (select id from document_versions
-                      where document_id = $1::uuid and kind = 'conflict' and author_id = $2::text
-                      order by saved_at desc, id
-                      offset $3::int)`,
-      [id, userId, MAX_CONFLICTS_PER_AUTHOR],
-    );
+    // Best effort: if the document was deleted a moment ago (foreign key) or anything else fails here,
+    // the caller still gets the 409 it is owed, not a 500.
+    await keepRefusedEdit(q, id, json, baseVersion, userId).catch(() => {});
   }
   return { ok: false, reason: "conflict", currentVersion: current[0].version };
+}
+
+/** Keep a refused save as a 'conflict' version (once per identical content), then trim to the newest few. */
+async function keepRefusedEdit(q: Query, id: string, json: string, baseVersion: number, userId: string) {
+  await q(
+    `insert into document_versions (document_id, content, doc_version, author_id, kind)
+     select $1::uuid, $2::jsonb, $3::int, $4::text, 'conflict'
+      where not exists (
+        select 1 from document_versions
+         where document_id = $1::uuid and kind = 'conflict' and author_id = $4::text and content = $2::jsonb)`,
+    [id, json, baseVersion, userId],
+  );
+  await q(
+    `delete from document_versions
+      where id in (select id from document_versions
+                    where document_id = $1::uuid and kind = 'conflict' and author_id = $2::text
+                    order by saved_at desc, id
+                    offset $3::int)`,
+    [id, userId, MAX_CONFLICTS_PER_AUTHOR],
+  );
 }
 
 export async function listVersions(q: Query, docId: string): Promise<VersionSummary[]> {

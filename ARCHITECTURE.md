@@ -112,7 +112,9 @@ The point is that nobody loses work, including the person who loses a conflict.
   and only when it was based on a real earlier version. Each person keeps the newest 5 per document, so stale saves
   sent in a loop can't flood history (found by the automated security review).
 - **Restore** is an ordinary optimistic save of the old content that always keeps the current state first, so every
-  restore can be undone. A refused restore stores nothing. It is enabled only once the editor says Saved.
+  restore can be undone. A refused restore stores nothing. It is enabled only once the editor says Saved, and the
+  editor is locked for the round trip so typing can't race it.
+- **Rename doesn't touch the "last edited" time**, so it can't reset the 5-minute pause rule.
 - **Access:** owners and editors only, as in Google Docs (viewers 403, strangers 404). Version ids are always looked
   up together with their document id, so a version id from another document is a 404.
 - **Preview** renders through a read-only editor with the same schema, never as raw HTML.
