@@ -69,6 +69,9 @@ export type SaveResult =
 /** A pause longer than this between saves starts a new version in history. */
 export const SNAPSHOT_GAP_MINUTES = 5;
 
+/** Refused edits kept per person per document; older ones are dropped, so they can't flood history. */
+export const MAX_CONFLICTS_PER_AUTHOR = 5;
+
 /**
  * Optimistic concurrency: the write only lands if the row is still at the
  * version the client started editing from. One statement, so two concurrent
@@ -79,7 +82,9 @@ export const SNAPSHOT_GAP_MINUTES = 5;
  * or when the caller forces it (restore). Unchanged content is never kept.
  *
  * A refused (stale) save is kept as a "conflict" version, so the person who
- * lost the race doesn't lose their edit. Identical refused content is kept once.
+ * lost the race doesn't lose their edit. Identical refused content is kept once,
+ * only a save based on a real earlier version counts, and each person keeps at
+ * most MAX_CONFLICTS_PER_AUTHOR of them per document.
  */
 export async function saveContent(
   q: Query,
@@ -119,7 +124,7 @@ export async function saveContent(
   if (rows[0]) return { ok: true, version: rows[0].version, updated_at: rows[0].updated_at };
   const current = await q<{ version: number }>("select version from documents where id = $1::uuid", [id]);
   if (!current[0]) return { ok: false, reason: "missing" };
-  if (opts.keepRejected ?? true) {
+  if ((opts.keepRejected ?? true) && baseVersion < current[0].version) {
     await q(
       `insert into document_versions (document_id, content, doc_version, author_id, kind)
        select $1::uuid, $2::jsonb, $3::int, $4::text, 'conflict'
@@ -127,6 +132,14 @@ export async function saveContent(
           select 1 from document_versions
            where document_id = $1::uuid and kind = 'conflict' and author_id = $4::text and content = $2::jsonb)`,
       [id, json, baseVersion, userId],
+    );
+    await q(
+      `delete from document_versions
+        where id in (select id from document_versions
+                      where document_id = $1::uuid and kind = 'conflict' and author_id = $2::text
+                      order by saved_at desc, id
+                      offset $3::int)`,
+      [id, userId, MAX_CONFLICTS_PER_AUTHOR],
     );
   }
   return { ok: false, reason: "conflict", currentVersion: current[0].version };

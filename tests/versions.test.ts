@@ -82,6 +82,24 @@ describe("conflicts keep the refused edit", () => {
   });
 });
 
+describe("refused edits can't flood history", () => {
+  it("keeps only the newest few per person, and ignores saves from a version that never existed", async () => {
+    const id = await newDoc();
+    await saveContent(q, id, doc("bob got there first"), 1, "bob");
+    for (let i = 1; i <= 7; i++) await saveContent(q, id, doc(`stale ${i}`), 1, "alice");
+    const conflicts = (await listVersions(q, id)).filter((v) => v.kind === "conflict");
+    expect(conflicts).toHaveLength(5);
+    const kept = await Promise.all(conflicts.map(async (c) => JSON.stringify((await getVersion(q, id, c.id))?.content)));
+    expect(kept.some((k) => k.includes("stale 7"))).toBe(true);
+    expect(kept.some((k) => k.includes("stale 1"))).toBe(false);
+
+    const future = await saveContent(q, id, doc("from the future"), 99, "alice");
+    expect(future).toMatchObject({ ok: false, reason: "conflict" });
+    const after = (await listVersions(q, id)).filter((v) => v.kind === "conflict");
+    expect(after).toHaveLength(5);
+  });
+});
+
 describe("restore", () => {
   it("brings a version back and keeps the replaced state, so restore can be undone", async () => {
     const id = await newDoc();
