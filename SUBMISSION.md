@@ -3,21 +3,21 @@
 I built a lightweight Google-Docs-style editor: create and rename documents, format them, upload files as new
 documents, and share them with other people as viewers or editors. It matters because a shared document is only
 useful if nobody silently loses work and nobody sees what they shouldn't, so those two things got the most care.
-It is deployed and working end to end; real-time co-editing and real sign-in are the main things deliberately left out.
+It's deployed and working end to end; real-time co-editing and real sign-in are the main things deliberately left out.
 
 - Live app: [Ajaia Docs, sign in as Alice, Bob or Carol](https://ajaia-docs-eight-green.vercel.app)
 - Code: [the source with full git history](https://github.com/TortoiseWolfe/ajaia-docs)
 - Drive folder: [everything listed below](https://drive.google.com/drive/folders/1wmhOH4Pk6CNueEoesRvVSCAt4tx1XK7A)
-- Walkthrough video: [4.5 minute walkthrough, narrated by an AI voice reading my script](https://drive.google.com/file/d/1yf8S_-p9llcGyCh9e69GlS1PLahNxOYc/view)
+- Walkthrough video: [4.5 minute walkthrough, narrated by an AI (artificial intelligence) voice reading my script](https://drive.google.com/file/d/1yf8S_-p9llcGyCh9e69GlS1PLahNxOYc/view)
 
-**Test accounts:** no passwords. On the sign-in page choose Alice Chen, Bob Martinez or Carol Okafor. Alice already
-shares "Q4 launch plan" with Bob as Editor, and Carol shares "Team offsite notes" with Alice as Viewer, so the sharing
-flows are visible on first sign-in. Sample files to upload are in the code's samples folder. Nothing costs money to
+**Test accounts:** no passwords. On the sign-in page choose Alice Chen, Bob Martinez or Carol Okafor. Bob can
+already edit Alice's "Q4 launch plan", and Alice can view Carol's "Team offsite notes", so the sharing flows are
+visible on first sign-in. Sample files to upload are in the code's samples folder. Nothing costs money to
 review or run.
 
 ## What's included in this folder
 
-| File | What it is |
+| File | What's in it |
 | --- | --- |
 | SUBMISSION.md | This file. |
 | README.md | Setup, environment variables, seeded users, commands, supported upload types. |
@@ -38,7 +38,7 @@ viewers; 404 for people without access; 409 on a stale save, with the refused ed
 preview and restore; delete; Markdown export.
 
 **Incomplete or deliberately left out:**
-real-time co-editing and presence; comments; real sign-in; inviting people by email; images in documents; PDF upload;
+real-time co-editing and presence; comments; real sign-in; inviting people by email; images in documents; PDF (Portable Document Format) upload;
 a diff view between versions. On a conflict the second person reloads; their refused edit is kept in History to
 restore or copy from, but nothing merges automatically. Rename is last-write-wins. Tested in Chromium only.
 
@@ -52,25 +52,25 @@ restore or copy from, but nothing merges automatically. Rename is last-write-win
 <details>
 <summary>Approach and decomposition: 8 pieces, 8 built, 5 cut</summary>
 
-Get a live URL with a real database first, so every later check happens where the reviewer will look.
+Get a live URL (a public web address) with a real database first, so every later check happens where the reviewer will look.
 
 > Next.js 16 on Vercel plus Neon Postgres, deployed with a "3 users" check before any feature work.
 
-The editor: write, format, and never lose the last few seconds of typing.
+The editor lets you write and format, and it never loses the last few seconds of typing.
 
 > Tiptap 3 with bold, italic, underline, H1 to H3, bulleted and numbered lists, undo/redo. Autosave about 1 s after
 > typing stops, with a visible Saving / Saved / Couldn't save status. components/DocEditor.tsx
 
-Sharing: one owner per document, who can let others view or edit, and take it back.
+Sharing gives each document one owner, who can let others view or edit and can take that back.
 
 > One function decides every role: lib/access.ts. Every API route and page calls it. No access returns 404.
 
-Conflict safety: two people editing the same document can't silently overwrite each other.
+Conflict safety means two people editing the same document can't silently overwrite each other.
 
 > Each save sends the version it started from; the server updates only if it still matches, else 409 and the editor
 > says "This document was changed by someone else. Reload to see the latest."
 
-Upload: a .txt, .md or .docx file becomes a new editable document, keeping headings and lists.
+Upload turns a .txt, .md or .docx file into a new editable document, keeping headings and lists.
 
 > marked and mammoth to HTML, then into the editor's own schema on the server, which drops anything it doesn't know.
 > lib/import.ts, with zip-bomb guards for .docx.
@@ -79,11 +79,11 @@ Tests where a bug would be silent: access rules, stale saves, import fidelity.
 
 > Vitest on PGlite (Postgres in WebAssembly) running the real db/schema.sql. 27 tests.
 
-Stretch: export any document to Markdown.
+The first stretch item exports any document to Markdown.
 
 > One button, turndown on the editor's HTML. lib/editor/export-markdown.ts
 
-Second stretch: version history, so the person who loses a conflict doesn't lose their edit.
+The second stretch item is version history, so the person who loses a conflict doesn't lose their edit.
 
 > Versions written inside the same single save statement; a refused save kept as a version (newest 5 per person);
 > preview and restore, which keeps the current text first so it can be undone. lib/db/repo.ts,
@@ -92,14 +92,15 @@ Second stretch: version history, so the person who loses a conflict doesn't lose
 <details>
 <summary>The short spec I wrote first</summary>
 
-In: create, rename, rich-text edit, autosave with status, reopen; upload .txt/.md/.docx (1 MB) as a new doc; share
-with a seeded user as Viewer or Editor, revoke; "My documents" and "Shared with me"; read-only for viewers; 404 for
+The spec covered create, rename, rich-text edit, autosave with status, reopen; upload .txt/.md/.docx (1 MB) as a new
+doc; share with a seeded user, who can view or edit, and revoke; "My documents" and "Shared with me"; read-only for viewers; 404 for
 strangers; Postgres persistence with a version column; 409 on a stale save; mocked sign-in with an HMAC-signed cookie.
 
-Out: real-time co-editing, comments, version history, real auth, sharing by email to outside people, images in
-documents, PDF upload.
+It left out real-time co-editing, comments, version history, real auth, sharing by email to outside people, images
+in documents and PDF upload.
 
-Done when: production URL works in a private window as Alice, Bob and Carol; npm test green; build clean.
+It was done when the production URL worked in a private window as Alice, Bob and Carol, npm test was green, and the
+build was clean.
 
 </details>
 
@@ -111,14 +112,14 @@ Done when: production URL works in a private window as Alice, Bob and Carol; npm
 1. Open the live app and choose "Continue as Alice Chen". You'll see "My documents" (two) and "Shared with me" (one
    from Carol, marked Viewer).
 2. Click "New document". Rename it by clicking the title. Type, use every toolbar button, and watch the status go to
-   "Saved". Refresh: everything is still there.
-3. Click "Upload file" and pick a .md or .docx (samples are in the repo's samples folder). It opens as a new document
+   "Saved". Refresh, and everything is still there.
+3. Click "Upload file" and pick a .md or .docx (samples are in the code's samples folder). It opens as a new document
    with headings and lists kept.
 4. Click "Share", pick Bob, choose Viewer. Sign out, continue as Bob: the document is under "Shared with me" and
    read-only.
 5. Continue as Carol and paste the document's URL: "Document not found" (a 404).
 6. As Alice, open the same document in two tabs and type in both: the second tab to save is told to reload. Reload
-   it and click History: its refused edit is there, marked "Kept after a conflict". Restore it.
+   it and click History, where its refused edit is marked "Kept after a conflict". Restore it.
 
 > Stack: Next.js 16 (App Router, TypeScript), Tiptap 3, Neon Postgres, zod, Vitest + PGlite, hosted on Vercel.
 > Sign-in is mocked by design: no password, pick a seeded user. The cookie is httpOnly and HMAC-signed.
@@ -126,12 +127,12 @@ Done when: production URL works in a private window as Alice, Bob and Carol; npm
 </details>
 
 <details>
-<summary>How I used AI: 26 prompts, 18 corrections logged, 6 AI tools</summary>
+<summary>How I used AI: 29 prompts, 19 corrections logged, 6 AI tools</summary>
 
-The full log, with every correction and how it was caught, is in AI_WORKFLOW.md. The short version follows.
+The full log, with every correction and how it was caught, is in AI_WORKFLOW.md.
 
 <details>
-<summary>The prompts, word for word (26)</summary>
+<summary>The prompts, word for word (29)</summary>
 
 Prompt 1, minute 5, to Claude Code (Opus). Start the build from the plan I approved at minute 3.
 
@@ -165,8 +166,8 @@ if it helps with pace and timing you can delegate to tmux subagents too?
 
 > The test suite went to a helper agent with a narrow file scope while the main session built the UI.
 
-Prompts 5 to 8, minutes 13 to 18: unblocking the database (the Neon terms needed a human click), confirming no extra
-backend service was needed, and running the first production deploy myself.
+Prompts 5 to 8, minutes 13 to 18, unblocked the database (the Neon terms needed a human click) and confirmed no extra
+backend service was needed. The last one ran the first production deploy, which means putting the live site up, myself.
 
 ```text
 if you need me to click on legal terms give me the link to get it done?
@@ -175,8 +176,9 @@ still don't see a link, what did you want me to click on?
 ! vercel deploy --prod --yes
 ```
 
-Prompts 9 to 12, minutes 29 to 40: answering its four questions (public repo, video, honesty line, Drive folder),
-asking for a second review with the full assignment pasted in, and the video script.
+Prompts 9 to 12, minutes 29 to 40, answered its four questions (a public repo, which means the code is open on
+GitHub; the video; the honesty line; the Drive folder). They also asked for a second review with the full assignment
+pasted in, and for the video script.
 
 ```text
 let' also use the tmux subagent to run a code review on it for good measure?
@@ -185,12 +187,12 @@ where will I look for the script to practice reading it?
 I'll need a clickable link to that
 ```
 
-> The second review checked every doc claim against the code and found stale counts, a promised Delete with no button,
-> and missing "working / incomplete / next" sections; all fixed. I planned to narrate the video in my own voice,
+> The second review checked every doc claim against the code. It found stale counts and a promised Delete with no
+> button, and the "working / incomplete / next" sections were missing; all fixed. I planned to narrate the video in my own voice,
 > since the assignment grades verbal communication; prompts 20 to 26 explain why the final uses an AI voice.
 
-Prompts 13 to 19, minutes 44 to 78: the voice-over plan, more stretch work while I practiced, a handoff, then a fresh
-session where I pasted in the portal page and asked for the most impressive feature and a slower cut.
+Prompts 13 to 19, minutes 44 to 78, covered the voice-over plan and more stretch work while I practiced. Then came a
+handoff and a fresh session, where I pasted in the portal page and asked for one more feature and a slower cut.
 
 ```text
 so I'm waiting on you to make the video cut first then I play and talk over it on OBS?
@@ -206,7 +208,7 @@ let' also use the tmux subagent to run a code review on it for good measure?
 > production schema change was blocked by the permission layer, so I ran it. A second blind review of just that
 > feature found four smaller issues; all fixed and redeployed.
 
-Prompts 20 to 26, minutes 92 to 135: recording the voice-over. Two are paraphrased because of their language.
+Prompts 20 to 26, minutes 92 to 135, were about recording the voice-over. Two are paraphrased because of their language.
 
 ```text
 mayb clip my lsst few seconds, what I improved after the script : "C:\Users\JonPo\Videos\2026-10-27 16-03-04.mkv"
@@ -220,6 +222,19 @@ fuck it, I don't have time to keep doing takes, use the AI voice and get it fini
 > processed version of the first take on my screen and interrupted the retake. With the clock running down, the final
 > video uses an AI voice (Piper, offline) reading the script I approved; it opens with a "Narration: AI voice." label.
 
+Prompts 27 to 29, minutes 140 to 146, were about the voice check I use on client email.
+
+```text
+did you give that any of our usual voice checks, probably should have done that with the script too
+I don't care if it's an engineering submission, it's still going to be watched by people so give it the same voice check we use on emails
+and we should still be able to export it to youtube for the unlisted link
+```
+
+> The second one was followed by a pasted copy of Claude's reply, which had said most of the check's hits didn't apply
+> to an engineering submission. Claude hadn't run the check on the script or on this text. With the full check, the
+> script failed on 8 points and this text on 37. Both were fixed, the video was re-rendered from the fixed script, and
+> it went up on YouTube as an unlisted video.
+
 </details>
 
 <details>
@@ -231,11 +246,11 @@ document right after typing lost the last words.
 > fetch(..., { keepalive: true }) is capped at 64 KiB per request by browsers; a document over that dropped its final
 > save with no warning.
 
-How I caught it: a second AI agent reviewed the code cold. I didn't take its word for it: I wrote a browser test that
-pastes about 90 KB, leaves within a second, and checks the server.
+I caught it because a second AI agent reviewed the code cold. I didn't take its word for it, so I wrote a browser test
+that pastes about 90 KB and leaves within a second, then checks the server.
 
 > scripts/browser-check.mjs, "large doc: last words saved after leaving quickly": FAIL on the old code (20/21),
-> PASS on the fix (21/21). Fix: keepalive only under 60 KB.
+> PASS on the fix (21/21). The fix sends keepalive only under 60 KB.
 
 </details>
 
@@ -246,7 +261,8 @@ pastes about 90 KB, leaves within a second, and checks the server.
 - Helper agent: wrote the test suite in parallel.
 - Review agents: two blind code reviews. The first found three real bugs; the second, of version history only, four smaller ones.
 - Second review agent: checked every doc claim against the code and the deliverables against the assignment.
-- Automated security review on each commit: caught the .docx zip-bomb risk twice, and a way to flood version history.
+- Automated security review on each commit, meaning each saved change to the code. It caught the .docx zip-bomb risk
+  twice, and a way to flood version history.
 - Piper TTS (offline neural voice): the walkthrough narration, reading my script.
 
 > Model: Claude Opus. Every prompt is quoted word for word above and in AI_WORKFLOW.md.
@@ -271,22 +287,22 @@ described above. I started from an empty folder and the standard create-next-app
 
 I traded live cursors for a guarantee that nobody silently overwrites anyone, which is what actually protects work.
 
-> Status: accepted. Problem: two people can edit a shared document; how do we stop lost updates in 4 hours?
-> Options considered: real-time sync (Yjs plus a websocket service); last-write-wins; version check with 409.
-> Chosen: version check, because it is one SQL statement, fully testable, and fails loudly instead of silently.
-> Cost: the second person must reload; their refused edit is kept in History to restore, but nothing merges
+> Status: accepted. The problem was stopping lost updates in 4 hours when two people can edit a shared document. I
+> weighed real-time sync (Yjs plus a websocket service), last-write-wins, and a version check with 409. I chose the
+> version check because it's one SQL statement and fully testable, and it fails loudly instead of silently. The cost is
+> that the second person must reload. Their refused edit is kept in History to restore, but nothing merges
 > automatically. Real-time is the first thing I'd add next.
 
 </details>
 
 <details>
-<summary>Decision 2: store the editor's JSON, not HTML</summary>
+<summary>Decision 2: store the editor's own format, not web page markup</summary>
 
-Keep the document in the editor's own format, so what's saved is exactly what's shown.
+Keep the document in the editor's own JSON (structured document data), so what's saved is exactly what's shown.
 
-> Status: accepted. Options: HTML; Markdown; editor JSON in a jsonb column. Chosen: JSON, because it round-trips
-> exactly, needs no HTML sanitizing on render, and the same schema validates imports. Cost: export needs a conversion
-> step (done for Markdown).
+> Status: accepted. I weighed HTML, Markdown, and editor JSON in a jsonb column. I chose JSON because it round-trips
+> exactly and needs no HTML sanitizing on render, and the same schema validates imports. The cost is that export needs
+> a conversion step (done for Markdown).
 
 </details>
 
@@ -296,7 +312,7 @@ Keep the document in the editor's own format, so what's saved is exactly what's 
 One gatekeeper, and it never confirms a door exists to someone without a key.
 
 > Status: accepted. lib/access.ts returns owner, editor, viewer or none; every route and page calls it. Strangers and
-> malformed ids get 404. Cost: none worth noting; it also made access testable in isolation.
+> malformed ids get 404. There's no real cost, and it also made access testable in isolation.
 
 </details>
 
@@ -305,18 +321,19 @@ One gatekeeper, and it never confirms a door exists to someone without a key.
 
 Skip passwords, keep the lock real.
 
-> Status: accepted. Options: real auth (Auth.js or Clerk); a plain user-id cookie; an HMAC-signed user-id cookie.
-> Chosen: signed cookie, because it shows the access model honestly in minutes and can't be edited to become someone
-> else (a forged cookie gets 401). Cost: no real accounts; the users table and check stay when real auth is added.
+> Status: accepted. I weighed real auth (Auth.js or Clerk) against two cookies: a plain user-id one and an HMAC-signed one.
+> I chose the signed cookie because it shows the access model honestly in minutes and can't be edited to become
+> someone else (a forged cookie gets 401). The cost is no real accounts. The users table and check stay when real auth
+> is added.
 
 </details>
 
 <details>
-<summary>Decision 5: tests on real SQL without Docker</summary>
+<summary>Decision 5: tests on the real database, without Docker</summary>
 
-Test against the real recipe, not a stand-in.
+Test against the real schema, which is the exact table layout production uses, not a stand-in.
 
-> Status: accepted. The data layer takes a query function; tests pass PGlite running db/schema.sql. Cost: PGlite is
+> Status: accepted. The data layer takes a query function; tests pass PGlite running db/schema.sql. The cost is that PGlite is
 > single-connection, so true concurrent-save races are covered by the single-statement design rather than a test.
 
 </details>
@@ -326,17 +343,17 @@ Test against the real recipe, not a stand-in.
 
 History should show stretches of work, not every keystroke, and must never break the no-overwrite guarantee.
 
-> Status: accepted. Options: a version per save (the 1-second autosave would flood it); timed checkpoints only; a
-> version when a different person starts editing or after a 5-minute pause, plus every refused save. Chosen: the
-> last, written inside the same single save statement so only one save can still win. Cost: edits by one person
-> within 5 minutes are one version.
+> Status: accepted. I weighed a version per save (the 1-second autosave would flood it), timed checkpoints only, and
+> a version when a different person starts editing or after a 5-minute pause, plus every refused save. I chose the
+> last, written inside the same single save statement so only one save can still win. The cost is that edits by one
+> person within 5 minutes are one version.
 
 </details>
 
 </details>
 
 <details>
-<summary>What I verified: 27 unit tests, 26 browser checks, every API route, all against production</summary>
+<summary>What I verified: 27 unit tests, 26 browser checks, every server route, all against production</summary>
 
 I checked it the way a reviewer will use it: on the live site, as each of the three people.
 
@@ -348,14 +365,22 @@ Test Files  5 passed (5)
 
 browser-check against https://ajaia-docs-eight-green.vercel.app
 26/26 checks passed
-
-smoke.sh against production
-api no cookie: 401 · forged cookie: 401 · stale save: 409 · stranger: 404 · viewer write: 403
-upload md / docx / txt: 201 · upload pdf: 415
-viewer history: 403 · stranger history: 404 · stale restore: 409 · restore: 200 · malformed version id: 404
 ```
 
-Not checked: behavior under heavy concurrent load, and browsers other than Chromium (the editor library supports
+The smoke test (scripts/smoke.sh) against production returned the expected code for every case.
+
+| Case | Code |
+| --- | --- |
+| No cookie, or a forged cookie | 401 |
+| A stale save, or a stale restore | 409 |
+| A stranger opening a document or its history | 404 |
+| A malformed version id | 404 |
+| A viewer writing, or opening history | 403 |
+| Uploading .md, .docx or .txt | 201 |
+| Uploading a PDF | 415 |
+| A restore | 200 |
+
+I didn't check behavior under heavy concurrent load, or browsers other than Chromium (the editor library supports
 them, but I didn't run them).
 
 </details>
@@ -363,11 +388,12 @@ them, but I didn't run them).
 <details>
 <summary>Later, beyond the next few hours: 4 items, in priority order</summary>
 
-1. Real-time co-editing with presence: removes the reload step entirely. Yjs with a hosted provider, 1 to 2 days.
-2. Real sign-in and email invitations: needed before anyone outside a demo uses it. Auth.js plus an invites table,
-   about 1 day.
-3. Comments anchored to text: a comments table plus a Tiptap mark, about a day.
-4. Images and PDF import: blob storage plus the Tiptap image extension, and PDF text extraction, about 1 day.
+1. Real-time co-editing with presence would remove the reload step entirely, using Yjs with a hosted provider, in 1
+   to 2 days.
+2. Real sign-in and email invitations are needed before anyone outside a demo uses it. That's Auth.js plus an
+   invites table, about 1 day.
+3. Comments anchored to text need a comments table plus a Tiptap mark, about a day.
+4. Images and PDF import need blob storage plus the Tiptap image extension, and PDF text extraction, about 1 day.
 
 </details>
 
@@ -380,10 +406,10 @@ Clock times come from the git commit history, which is public in the code link.
 | --- | --- |
 | 0 | Started the assignment at 7:43 PM |
 | 5 | Fresh Claude Code session reads the approved plan; Next.js scaffolded |
-| 13 | Schema, data layer, access rules, API, editor UI committed; helper agent's 12 tests verified |
+| 13 | Schema, data layer, access rules, API (the server's endpoints), editor interface committed; helper agent's 12 tests verified |
 | 15 | Security review flags .docx zip bombs; guard added with a test |
 | 17 | Neon terms accepted; database provisioned and seeded |
-| 18 | First production deploy |
+| 18 | First production deploy, which means the live site went up |
 | 20 | Every API route checked on production as all three users |
 | 21 | Browser click-through on production: 19/19; screenshots taken |
 | 23 | Stronger .docx guard; Markdown export shipped (stretch) |
@@ -391,13 +417,15 @@ Clock times come from the git commit history, which is public in the code link.
 | 28 | Architecture, AI workflow and submission write-ups |
 | 32 | Code published to a public GitHub repo after a secrets scan (gitleaks: no leaks) |
 | 37 | Second review agent checks every doc claim against the code; fixes and an owner Delete button; 22/22 on production |
-| 39 | Walkthrough script written; click path recorded on production from the same script |
-| 53 | Fresh session; asked for the most impressive feature and a slower cut to read along with |
+| 39 | Walkthrough script written; click path filmed on production (https://ajaia-docs-eight-green.vercel.app) from the same script |
+| 53 | Fresh session; asked for one more feature and a slower cut to read along with |
 | 70 | Version history live on production: 27 tests, 26/26 browser checks, every API check |
 | 80 | Slower walkthrough cut ready; second blind review's four fixes shipped |
 | 120 | My own voice-over take; a retake interrupted when Claude opened a video on my screen |
 | 136 | Final video: the AI voice reading my script, uploaded to the Drive folder |
-| 145 | Drive folder shared; portal text ready; submitted |
+| 140 | Asked whether the voice check had run on the script and this text; it hadn't |
+| 146 | Full strict voice check on the script and every doc; video re-rendered from the fixed script |
+| SUBMIT_MINUTE | YouTube link in; Drive folder updated; portal text ready; submitted |
 
 </details>
 
@@ -416,7 +444,7 @@ npm test
 npm run check:api -- https://ajaia-docs-eight-green.vercel.app
 npm run check:browser -- https://ajaia-docs-eight-green.vercel.app
 
-Deployed: Vercel (production), database: Neon (free tier, via Vercel Marketplace)
+# hosted on Vercel (production); database on Neon (free tier, via Vercel Marketplace)
 ```
 
 </details>
